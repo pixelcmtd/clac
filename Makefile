@@ -23,7 +23,7 @@ all: λ
 	$(LD) $(LDFLAGS) $(OBJ) -ly -o λ
 
 test: all
-	./λ < I.λ
+	$(foreach f,$(wildcard test/*),./λ < $(f);)
 
 clean:
 	rm -f λ.l.c λ.l.h λ.y.c λ.y.h
