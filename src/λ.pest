@@ -1,0 +1,5 @@
+ids = { ('a'..'z' | 'A'..'Z' | '0'..'9')+ }
+
+expr = { func | ("(" ~ expr ~ ")") | (ids ~ expr) | ids }
+
+func = { "λ" ~ ids ~ "." ~ expr }
