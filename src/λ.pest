@@ -1,5 +1,12 @@
-ids = { ('a'..'z' | 'A'..'Z' | '0'..'9')+ }
+// TODO: unicode compliance
+WHITESPACE = _{ " " | NEWLINE }
 
-expr = { func | ("(" ~ expr ~ ")") | (ids ~ expr) | ids }
+// TODO: unicode support
+id = { ASCII_ALPHANUMERIC }
+ids = _{ id+ }
 
-func = { "λ" ~ ids ~ "." ~ expr }
+expr = _{ func | ("(" ~ expr ~ ")") | (id ~ expr) | id }
+
+params = { ids }
+body = { expr }
+func = { ("λ" | "Λ") ~ params ~ "." ~ body }

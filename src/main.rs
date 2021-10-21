@@ -2,28 +2,87 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+use pest::iterators::*;
 use pest::*;
+use std::io::{self, Read};
 
 #[derive(Parser)]
 #[grammar = "λ.pest"]
 struct ΛParser;
 
-fn main() {
-    let pairs = ΛParser::parse(Rule::func, "λfx.f(fx)").unwrap_or_else(|e| panic!("{}", e));
+#[derive(Debug)]
+enum ΛNode {
+    Symbol(String),
+    Lambda(Box<ΛNode>, Box<ΛNode>),
+    Application(Box<ΛNode>, Box<ΛNode>),
+}
+
+impl ΛNode {
+    fn from_parse_tree(tree: Pair<Rule>) -> Self {
+        match tree.as_rule() {
+            Rule::id => ΛNode::Symbol(String::from(tree.as_str())),
+            // TODO:
+            Rule::body => ΛNode::Symbol(String::from("BODY")),
+            Rule::func => {
+                let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
+                    Rule::params => true,
+                    Rule::body => true,
+                    _ => false,
+                });
+                let mut params = inner.next().unwrap().into_inner().rev();
+                let body = inner.next().unwrap();
+                println!("{:?}", params);
+                println!("{:?}", body);
+                let mut func = ΛNode::Lambda(
+                    Box::from(ΛNode::from_parse_tree(params.next().unwrap())),
+                    Box::from(ΛNode::from_parse_tree(body)),
+                );
+                for param in params {
+                    func =
+                        ΛNode::Lambda(Box::from(ΛNode::from_parse_tree(param)), Box::from(func));
+                }
+                func
+            }
+            // TODO: parse the applications
+            _ => ΛNode::Symbol(String::from("")),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_λs() {
+        for s in [
+            include_str!("../test/I.λ"),
+            include_str!("../test/2.λ"),
+            include_str!("../test/succ.λ"),
+        ] {
+            let _pairs = ΛParser::parse(Rule::func, s).unwrap_or_else(|e| panic!("{}", e));
+        }
+        // TODO: actually test
+    }
+}
+
+fn main() -> io::Result<()> {
+    let mut buffer = String::new();
+    io::stdin().read_to_string(&mut buffer)?;
+    let pairs = ΛParser::parse(Rule::func, &buffer).unwrap_or_else(|e| panic!("{}", e));
+
+    println!("{:?}", pairs);
 
     for pair in pairs {
+        println!("{:?}", pair);
+
         // A pair is a combination of the rule which matched and a span of input
         println!("Rule:    {:?}", pair.as_rule());
         println!("Span:    {:?}", pair.as_span());
         println!("Text:    {}", pair.as_str());
 
-        // A pair can be converted to an iterator of the tokens which make it up:
-        for inner_pair in pair.into_inner() {
-            match inner_pair.as_rule() {
-                Rule::ids => println!("IDs:  {}", inner_pair.as_str()),
-                Rule::expr => println!("Expr:   {}", inner_pair.as_str()),
-                Rule::func => println!("Func:   {}", inner_pair.as_str()),
-            };
-        }
+        println!("{:?}", ΛNode::from_parse_tree(pair));
     }
+
+    Ok(())
 }
