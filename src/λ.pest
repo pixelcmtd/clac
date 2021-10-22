@@ -2,11 +2,12 @@
 WHITESPACE = _{ " " | NEWLINE }
 
 // TODO: unicode support
-id = { ASCII_ALPHANUMERIC }
-ids = _{ id+ }
+variable = { ASCII_ALPHANUMERIC }
+pexpr = _{ "(" ~ expr ~ ")" }
+item = { variable | pexpr }
 
-expr = _{ func | ("(" ~ expr ~ ")") | (id ~ expr) | id }
+expr = _{ func | item+ }
 
-params = { ids }
+params = { variable+ }
 body = { expr }
 func = { ("λ" | "Λ") ~ params ~ "." ~ body }

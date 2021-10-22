@@ -20,9 +20,21 @@ enum ΛNode {
 impl ΛNode {
     fn from_parse_tree(tree: Pair<Rule>) -> Self {
         match tree.as_rule() {
-            Rule::id => ΛNode::Symbol(String::from(tree.as_str())),
+            Rule::variable => ΛNode::Symbol(String::from(tree.as_str())),
+            Rule::item => ΛNode::from_parse_tree(tree.into_inner().next().unwrap()),
             // TODO:
-            Rule::body => ΛNode::Symbol(String::from("BODY")),
+            Rule::body => {
+                let mut items = tree.into_inner().rev();
+                println!("{:?}", items);
+                let mut body = ΛNode::from_parse_tree(items.next().unwrap());
+                for item in items {
+                    body = ΛNode::Application(
+                        Box::from(ΛNode::from_parse_tree(item)),
+                        Box::from(body),
+                    );
+                }
+                body
+            }
             Rule::func => {
                 let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
                     Rule::params => true,
@@ -32,7 +44,6 @@ impl ΛNode {
                 let mut params = inner.next().unwrap().into_inner().rev();
                 let body = inner.next().unwrap();
                 println!("{:?}", params);
-                println!("{:?}", body);
                 let mut func = ΛNode::Lambda(
                     Box::from(ΛNode::from_parse_tree(params.next().unwrap())),
                     Box::from(ΛNode::from_parse_tree(body)),
