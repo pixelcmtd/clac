@@ -3,10 +3,10 @@ WHITESPACE = _{ " " | NEWLINE }
 
 // TODO: unicode support
 variable = { ASCII_ALPHANUMERIC }
-pexpr = _{ "(" ~ expr ~ ")" }
+pexpr = { "(" ~ expr ~ ")" }
 item = { variable | pexpr }
 
-expr = _{ func | item+ }
+expr = { func | item+ }
 
 params = { variable+ }
 body = { expr }

@@ -18,44 +18,41 @@ enum ΛNode {
 }
 
 impl ΛNode {
-    fn from_parse_tree(tree: Pair<Rule>) -> Self {
+    fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
         match tree.as_rule() {
-            Rule::variable => ΛNode::Symbol(String::from(tree.as_str())),
-            Rule::item => ΛNode::from_parse_tree(tree.into_inner().next().unwrap()),
-            // TODO:
-            Rule::body => {
+            Rule::WHITESPACE | Rule::params => None,
+            Rule::variable => Some(ΛNode::Symbol(String::from(tree.as_str()))),
+            Rule::item | Rule::body | Rule::pexpr => {
+                ΛNode::from_parse_tree(tree.into_inner().next()?)
+            }
+            Rule::expr => {
                 let mut items = tree.into_inner().rev();
-                println!("{:?}", items);
-                let mut body = ΛNode::from_parse_tree(items.next().unwrap());
+                let mut expr = ΛNode::from_parse_tree(items.next()?)?;
                 for item in items {
-                    body = ΛNode::Application(
-                        Box::from(ΛNode::from_parse_tree(item)),
-                        Box::from(body),
+                    expr = ΛNode::Application(
+                        Box::from(ΛNode::from_parse_tree(item)?),
+                        Box::from(expr),
                     );
                 }
-                body
+                Some(expr)
             }
             Rule::func => {
                 let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
-                    Rule::params => true,
-                    Rule::body => true,
+                    Rule::params | Rule::body => true,
                     _ => false,
                 });
-                let mut params = inner.next().unwrap().into_inner().rev();
-                let body = inner.next().unwrap();
-                println!("{:?}", params);
+                let mut params = inner.next()?.into_inner().rev();
+                let body = inner.next()?;
                 let mut func = ΛNode::Lambda(
-                    Box::from(ΛNode::from_parse_tree(params.next().unwrap())),
-                    Box::from(ΛNode::from_parse_tree(body)),
+                    Box::from(ΛNode::from_parse_tree(params.next()?)?),
+                    Box::from(ΛNode::from_parse_tree(body)?),
                 );
                 for param in params {
                     func =
-                        ΛNode::Lambda(Box::from(ΛNode::from_parse_tree(param)), Box::from(func));
+                        ΛNode::Lambda(Box::from(ΛNode::from_parse_tree(param)?), Box::from(func));
                 }
-                func
+                Some(func)
             }
-            // TODO: parse the applications
-            _ => ΛNode::Symbol(String::from("")),
         }
     }
 }
@@ -82,16 +79,8 @@ fn main() -> io::Result<()> {
     io::stdin().read_to_string(&mut buffer)?;
     let pairs = ΛParser::parse(Rule::func, &buffer).unwrap_or_else(|e| panic!("{}", e));
 
-    println!("{:?}", pairs);
-
     for pair in pairs {
         println!("{:?}", pair);
-
-        // A pair is a combination of the rule which matched and a span of input
-        println!("Rule:    {:?}", pair.as_rule());
-        println!("Span:    {:?}", pair.as_span());
-        println!("Text:    {}", pair.as_str());
-
         println!("{:?}", ΛNode::from_parse_tree(pair));
     }
 
