@@ -61,6 +61,47 @@ impl ΛNode {
             }
         }
     }
+
+    fn β_reduce<'a>(&'a self) -> Option<Box<ΛNode>> {
+        β_reduce(self, &String::from(""), &ΛNode::Symbol(String::from("")))
+    }
+}
+
+fn β_reduce<'a>(node: &'a ΛNode, name: &'a String, arg: &'a ΛNode) -> Option<Box<ΛNode>> {
+    match node {
+        ΛNode::Symbol(ref s) => Some(if *s == *name {
+            Box::from(arg.clone())
+        } else {
+            Box::from(node.clone())
+        }),
+        ΛNode::Lambda(param, body) => {
+            if *param == *name {
+                // TODO: shadowing?!
+                None
+            } else {
+                Some(Box::from(ΛNode::Lambda(
+                    param.clone(),
+                    Box::from(β_reduce(body, name, arg)?),
+                )))
+            }
+        }
+        ΛNode::Application(func, param) => {
+            // for some reason i cant directly use this
+            let skr = &β_reduce(
+                &match &**func {
+                    ΛNode::Lambda(_, b) => (**b).clone(),
+                    _ => ΛNode::Symbol(String::from("")),
+                },
+                &match &**func {
+                    ΛNode::Lambda(p, _) => p.clone(),
+                    _ => String::new(),
+                },
+                param,
+            )?;
+
+            β_reduce(skr, name, arg)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -83,11 +124,16 @@ mod tests {
 fn main() -> io::Result<()> {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
-    let pairs = ΛParser::parse(Rule::func, &buffer).unwrap_or_else(|e| panic!("{}", e));
+    let pairs = ΛParser::parse(Rule::expr, &buffer).unwrap_or_else(|e| panic!("{}", e));
 
     for pair in pairs {
         println!("{:?}", pair);
-        println!("{:?}", ΛNode::from_parse_tree(pair));
+        let expr = ΛNode::from_parse_tree(pair);
+        println!("Expr: {:?}", expr);
+        match expr {
+            Some(x) => println!("ΒNF: {:?}", x.β_reduce()),
+            None => {}
+        }
     }
 
     Ok(())
