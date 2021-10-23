@@ -26,15 +26,22 @@ impl ΛNode {
                 ΛNode::from_parse_tree(tree.into_inner().next()?)
             }
             Rule::expr => {
-                let mut items = tree.into_inner().rev();
-                let mut expr = ΛNode::from_parse_tree(items.next()?)?;
-                for item in items {
-                    expr = ΛNode::Application(
-                        Box::from(ΛNode::from_parse_tree(item)?),
-                        Box::from(expr),
+                let items: Vec<Pair<Rule>> = tree.into_inner().collect();
+                Some(if items.len() == 1 {
+                    ΛNode::from_parse_tree(items[0].clone())?
+                } else {
+                    let mut expr = ΛNode::Application(
+                        Box::from(ΛNode::from_parse_tree(items[0].clone())?),
+                        Box::from(ΛNode::from_parse_tree(items[1].clone())?),
                     );
-                }
-                Some(expr)
+                    for item in items {
+                        expr = ΛNode::Application(
+                            Box::from(expr),
+                            Box::from(ΛNode::from_parse_tree(item)?),
+                        );
+                    }
+                    expr
+                })
             }
             Rule::func => {
                 let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
