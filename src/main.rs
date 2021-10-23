@@ -10,10 +10,10 @@ use std::io::{self, Read};
 #[grammar = "λ.pest"]
 struct ΛParser;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum ΛNode {
     Symbol(String),
-    Lambda(Box<ΛNode>, Box<ΛNode>),
+    Lambda(String, Box<ΛNode>),
     Application(Box<ΛNode>, Box<ΛNode>),
 }
 
@@ -51,12 +51,11 @@ impl ΛNode {
                 let mut params = inner.next()?.into_inner().rev();
                 let body = inner.next()?;
                 let mut func = ΛNode::Lambda(
-                    Box::from(ΛNode::from_parse_tree(params.next()?)?),
+                    String::from(params.next()?.as_str()),
                     Box::from(ΛNode::from_parse_tree(body)?),
                 );
                 for param in params {
-                    func =
-                        ΛNode::Lambda(Box::from(ΛNode::from_parse_tree(param)?), Box::from(func));
+                    func = ΛNode::Lambda(String::from(param.as_str()), Box::from(func));
                 }
                 Some(func)
             }
