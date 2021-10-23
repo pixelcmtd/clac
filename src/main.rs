@@ -67,39 +67,30 @@ impl ΛNode {
     }
 }
 
-fn β_reduce<'a>(node: &'a ΛNode, name: &'a String, arg: &'a ΛNode) -> Option<Box<ΛNode>> {
+fn β_reduce<'a>(node: &'a ΛNode, name: &'a String, arg: &'a ΛNode) -> Box<ΛNode> {
     match node {
-        ΛNode::Symbol(ref s) => Some(if *s == *name {
-            Box::from(arg.clone())
-        } else {
-            Box::from(node.clone())
-        }),
-        ΛNode::Lambda(param, body) => {
-            if *param == *name {
-                // TODO: shadowing?!
-                None
+        ΛNode::Symbol(ref s) => {
+            if *s == *name {
+                Box::from(arg.clone())
             } else {
-                Some(Box::from(ΛNode::Lambda(
-                    param.clone(),
-                    Box::from(β_reduce(body, name, arg)?),
-                )))
+                Box::from(node.clone())
             }
         }
+        ΛNode::Lambda(param, body) => Box::from(if *param == *name {
+            node.clone()
+        } else {
+            ΛNode::Lambda(param.clone(), Box::from(β_reduce(body, name, arg)))
+        }),
+        // TODO: fix those names
         ΛNode::Application(func, param) => {
-            // for some reason i cant directly use this
-            let skr = &β_reduce(
-                &match &**func {
-                    ΛNode::Lambda(_, b) => (**b).clone(),
-                    _ => ΛNode::Symbol(String::from("")),
-                },
-                &match &**func {
-                    ΛNode::Lambda(p, _) => p.clone(),
-                    _ => String::new(),
-                },
-                param,
-            )?;
-
-            β_reduce(skr, name, arg)
+            let func = β_reduce(func, name, arg);
+            let param = β_reduce(param, name, arg);
+            match *func {
+                ΛNode::Lambda(fparam, body) => {
+                    β_reduce(&β_reduce(&*body, &fparam, &*param), name, arg)
+                }
+                _ => Box::from(ΛNode::Application(func, param)),
+            }
         }
     }
 }
