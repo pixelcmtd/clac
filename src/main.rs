@@ -62,8 +62,31 @@ impl ΛNode {
         }
     }
 
-    fn β_reduce<'a>(&'a self) -> Option<Box<ΛNode>> {
-        β_reduce(self, &String::from(""), &ΛNode::Symbol(String::from("")))
+    fn to_string(&self) -> String {
+        match self {
+            ΛNode::Symbol(s) => s.clone(),
+            ΛNode::Lambda(arg, body) => String::from("λ") + arg + "." + &body.to_string(),
+            ΛNode::Application(func, arg) => {
+                (match **func {
+                    ΛNode::Symbol(_) | ΛNode::Application(_, _) => func.to_string(),
+                    ΛNode::Lambda(_, _) => String::from("(") + &func.to_string() + ")",
+                } + &(match **arg {
+                    ΛNode::Symbol(_) => {
+                        String::from(match **func {
+                            ΛNode::Application(_, _) | ΛNode::Symbol(_) => " ",
+                            _ => "",
+                        }) + &arg.to_string()
+                    }
+                    ΛNode::Lambda(_, _) | ΛNode::Application(_, _) => {
+                        String::from("(") + &arg.to_string() + ")"
+                    }
+                }))
+            }
+        }
+    }
+
+    fn β_reduce<'a>(&'a self) -> Box<ΛNode> {
+        β_reduce(self, &String::new(), &ΛNode::Symbol(String::new()))
     }
 }
 
@@ -105,8 +128,9 @@ mod tests {
             include_str!("../test/I.λ"),
             include_str!("../test/2.λ"),
             include_str!("../test/succ.λ"),
+            // TODO: the 2 others
         ] {
-            let _pairs = ΛParser::parse(Rule::func, s).unwrap_or_else(|e| panic!("{}", e));
+            let _pairs = ΛParser::parse(Rule::expr, s).unwrap_or_else(|e| panic!("{}", e));
         }
         // TODO: actually test
     }
@@ -120,9 +144,11 @@ fn main() -> io::Result<()> {
     for pair in pairs {
         println!("{:?}", pair);
         let expr = ΛNode::from_parse_tree(pair);
-        println!("Expr: {:?}", expr);
         match expr {
-            Some(x) => println!("ΒNF: {:?}", x.β_reduce()),
+            Some(x) => {
+                println!("expression: {:?}", x.to_string());
+                println!("β-normal-form: {:?}", x.β_reduce().to_string());
+            }
             None => {}
         }
     }
