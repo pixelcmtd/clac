@@ -10,6 +10,7 @@ use std::io::{self, Read};
 #[grammar = "λ.pest"]
 struct ΛParser;
 
+// TODO: good equality
 #[derive(Clone, Debug, PartialEq)]
 enum ΛNode {
     Symbol(String),
@@ -85,20 +86,14 @@ impl ΛNode {
         }
     }
 
-    fn β_reduce<'a>(&'a self) -> Box<ΛNode> {
+    fn β_reduce(&self) -> Box<ΛNode> {
         β_reduce(self, &String::new(), &ΛNode::Symbol(String::new()))
     }
 }
 
-fn β_reduce<'a>(node: &'a ΛNode, name: &'a String, arg: &'a ΛNode) -> Box<ΛNode> {
+fn β_reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> Box<ΛNode> {
     match node {
-        ΛNode::Symbol(ref s) => {
-            if *s == *name {
-                Box::from(arg.clone())
-            } else {
-                Box::from(node.clone())
-            }
-        }
+        ΛNode::Symbol(ref s) => Box::from(if *s == *name { arg } else { node }.clone()),
         ΛNode::Lambda(param, body) => Box::from(if *param == *name {
             node.clone()
         } else {
@@ -151,13 +146,9 @@ fn main() -> io::Result<()> {
 
     for pair in pairs {
         println!("{:?}", pair);
-        let expr = ΛNode::from_parse_tree(pair);
-        match expr {
-            Some(x) => {
-                println!("expression: {:?}", x.to_string());
-                println!("β-normal-form: {:?}", x.β_reduce().to_string());
-            }
-            None => {}
+        if let Some(expr) = ΛNode::from_parse_tree(pair) {
+            println!("expression: {:?}", expr.to_string());
+            println!("β-normal-form: {:?}", expr.β_reduce().to_string());
         }
     }
 
