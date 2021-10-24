@@ -1,1 +1,1 @@
-λn f a.f(n f a)
+λn f a.f(n f a) → λn f a.f(n f a)

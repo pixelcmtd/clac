@@ -10,7 +10,7 @@ use std::io::{self, Read};
 #[grammar = "λ.pest"]
 struct ΛParser;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum ΛNode {
     Symbol(String),
     Lambda(String, Box<ΛNode>),
@@ -122,17 +122,25 @@ fn β_reduce<'a>(node: &'a ΛNode, name: &'a String, arg: &'a ΛNode) -> Box<ΛN
 mod tests {
     use super::*;
 
+    fn hacky_parse(expr: &str) -> ΛNode {
+        ΛNode::from_parse_tree(ΛParser::parse(Rule::expr, expr).unwrap().next().unwrap()).unwrap()
+    }
+
     #[test]
     fn test_λs() {
-        for s in [
+        for case in [
             include_str!("../test/I.λ"),
             include_str!("../test/2.λ"),
             include_str!("../test/succ.λ"),
-            // TODO: the 2 others
+            include_str!("../test/KII.λ"),
+            include_str!("../test/1+1.λ"),
         ] {
-            let _pairs = ΛParser::parse(Rule::expr, s).unwrap_or_else(|e| panic!("{}", e));
+            let mut split = case.split(" → ");
+            let tree = hacky_parse(split.next().unwrap());
+            let βnf = hacky_parse(split.next().unwrap());
+            assert_eq!(tree, hacky_parse(&tree.to_string()));
+            assert_eq!(*tree.β_reduce(), βnf);
         }
-        // TODO: actually test
     }
 }
 
