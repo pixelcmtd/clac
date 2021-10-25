@@ -10,13 +10,40 @@ use std::io::{self, Read};
 #[grammar = "λ.pest"]
 struct ΛParser;
 
-// TODO: good equality
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum ΛSerializationType {
+    Func = 0,
+    Numeral,
+    Boolean,
+}
+
 #[derive(Clone, Debug, PartialEq)]
 enum ΛNode {
     Symbol(String),
-    Lambda(String, Box<ΛNode>),
+    Lambda(String, Box<ΛNode>, ΛSerializationType),
     Application(Box<ΛNode>, Box<ΛNode>),
 }
+
+// TODO:
+//impl PartialEq for ΛNode {
+//    // TODO: η reduction and α conversion
+//    fn eq(&self, other: &Self) -> bool {
+//        match self {
+//            ΛNode::Symbol(s) => match other {
+//                ΛNode::Symbol(o) => s == o,
+//                _ => false,
+//            },
+//            ΛNode::Lambda(sa, sb) => match other {
+//                ΛNode::Lambda(oa, ob) => sa == oa && sb == ob,
+//                _ => false,
+//            },
+//            ΛNode::Application(sf, sa) => match other {
+//                ΛNode::Application(of, oa) => sf == of && sa == oa,
+//                _ => false,
+//            },
+//        }
+//    }
+//}
 
 impl ΛNode {
     fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
@@ -54,60 +81,137 @@ impl ΛNode {
                 let mut func = ΛNode::Lambda(
                     String::from(params.next()?.as_str()),
                     Box::from(ΛNode::from_parse_tree(body)?),
+                    ΛSerializationType::Func,
                 );
                 for param in params {
-                    func = ΛNode::Lambda(String::from(param.as_str()), Box::from(func));
+                    func = ΛNode::Lambda(
+                        String::from(param.as_str()),
+                        Box::from(func),
+                        ΛSerializationType::Func,
+                    );
                 }
                 Some(func)
             }
         }
     }
 
+    fn wrap_with_defs(&self, defs: Vec<(String, ΛNode)>) -> ΛNode {
+        let mut tree = self.clone();
+        for pair in defs {
+            tree = ΛNode::Application(
+                Box::from(ΛNode::Lambda(
+                    pair.0,
+                    Box::from(tree),
+                    ΛSerializationType::Func,
+                )),
+                Box::from(pair.1),
+            );
+        }
+        tree
+    }
+
     fn to_string(&self) -> String {
         match self {
             ΛNode::Symbol(s) => s.clone(),
-            ΛNode::Lambda(arg, body) => String::from("λ") + arg + "." + &body.to_string(),
+            ΛNode::Lambda(arg, body, ty) => match ty {
+                ΛSerializationType::Func => String::from("λ") + arg + "." + &body.to_string(),
+                ΛSerializationType::Boolean => {
+                    String::from(if let ΛNode::Lambda(y, inner, _) = &**body {
+                        if **inner == ΛNode::Symbol(y.clone()) {
+                            "F"
+                        } else if **inner == ΛNode::Symbol(arg.clone()) {
+                            "T"
+                        } else {
+                            "BOOL"
+                        }
+                    } else {
+                        "BOOL"
+                    })
+                }
+                ΛSerializationType::Numeral => {
+                    let mut c = *body.clone();
+                    let mut n = 0;
+                    while let ΛNode::Application(_, x) = c {
+                        n += 1;
+                        c = *x;
+                    }
+                    n.to_string()
+                }
+            },
             ΛNode::Application(func, arg) => {
                 (match **func {
                     ΛNode::Symbol(_) | ΛNode::Application(_, _) => func.to_string(),
-                    ΛNode::Lambda(_, _) => String::from("(") + &func.to_string() + ")",
+                    ΛNode::Lambda(_, _, _) => String::from("(") + &func.to_string() + ")",
                 } + &(match **arg {
                     ΛNode::Symbol(_) => {
                         String::from(match **func {
-                            ΛNode::Application(_, _) | ΛNode::Symbol(_) => " ",
+                            ΛNode::Symbol(_) => " ",
                             _ => "",
                         }) + &arg.to_string()
                     }
-                    ΛNode::Lambda(_, _) | ΛNode::Application(_, _) => {
-                        String::from("(") + &arg.to_string() + ")"
-                    }
+                    ΛNode::Lambda(_, _, ty) => match ty {
+                        ΛSerializationType::Func => String::from("(") + &arg.to_string() + ")",
+                        _ => arg.to_string(),
+                    },
+                    _ => String::from("(") + &arg.to_string() + ")",
                 }))
             }
         }
     }
 
-    fn β_reduce(&self) -> Box<ΛNode> {
+    fn η_reduce(&self) -> ΛNode {
+        match self {
+            ΛNode::Symbol(_) => self.clone(),
+            ΛNode::Lambda(a, b, t) => ΛNode::Lambda(
+                a.clone(),
+                Box::from(
+                    (match &**b {
+                        ΛNode::Application(f, p) => {
+                            if match &**p {
+                                ΛNode::Symbol(s) => *a == *s,
+                                _ => false,
+                            } {
+                                &f
+                            } else {
+                                b
+                            }
+                        }
+                        _ => b,
+                    })
+                    .η_reduce(),
+                ),
+                *t,
+            ),
+            ΛNode::Application(f, a) => {
+                ΛNode::Application(Box::from(f.η_reduce()), Box::from(a.η_reduce()))
+            }
+        }
+    }
+
+    fn β_reduce(&self) -> ΛNode {
         β_reduce(self, &String::new(), &ΛNode::Symbol(String::new()))
     }
 }
 
-fn β_reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> Box<ΛNode> {
+fn β_reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
     match node {
-        ΛNode::Symbol(ref s) => Box::from(if *s == *name { arg } else { node }.clone()),
-        ΛNode::Lambda(param, body) => Box::from(if *param == *name {
-            node.clone()
-        } else {
-            ΛNode::Lambda(param.clone(), Box::from(β_reduce(body, name, arg)))
-        }),
+        ΛNode::Symbol(ref s) => if *s == *name { arg } else { node }.clone(),
+        ΛNode::Lambda(param, body, ty) => {
+            if *param == *name {
+                node.clone()
+            } else {
+                ΛNode::Lambda(param.clone(), Box::from(β_reduce(body, name, arg)), *ty)
+            }
+        }
         // TODO: fix those names
         ΛNode::Application(func, param) => {
             let func = β_reduce(func, name, arg);
             let param = β_reduce(param, name, arg);
-            match *func {
-                ΛNode::Lambda(fparam, body) => {
-                    β_reduce(&β_reduce(&*body, &fparam, &*param), name, arg)
+            match func {
+                ΛNode::Lambda(fparam, body, _) => {
+                    β_reduce(&β_reduce(&*body, &fparam, &param), name, arg)
                 }
-                _ => Box::from(ΛNode::Application(func, param)),
+                _ => ΛNode::Application(Box::from(func), Box::from(param)),
             }
         }
     }
@@ -134,7 +238,7 @@ mod tests {
             let tree = hacky_parse(split.next().unwrap());
             let βnf = hacky_parse(split.next().unwrap());
             assert_eq!(tree, hacky_parse(&tree.to_string()));
-            assert_eq!(*tree.β_reduce(), βnf);
+            assert_eq!(tree.β_reduce(), βnf);
         }
     }
 }
@@ -146,9 +250,25 @@ fn main() -> io::Result<()> {
 
     for pair in pairs {
         println!("{:?}", pair);
-        if let Some(expr) = ΛNode::from_parse_tree(pair) {
+        if let Some(raw_expr) = ΛNode::from_parse_tree(pair) {
+            let expr = raw_expr.wrap_with_defs(vec![(
+                String::from("T"),
+                // TODO: make it possible to use our usual functions for this
+                // (or just make everything better otherwise)
+                ΛNode::Lambda(
+                    String::from("x"),
+                    Box::from(ΛNode::Lambda(
+                        String::from("y"),
+                        Box::from(ΛNode::Symbol(String::from("x"))),
+                        ΛSerializationType::Boolean,
+                    )),
+                    ΛSerializationType::Boolean,
+                ),
+            )]);
             println!("expression: {:?}", expr.to_string());
             println!("β-normal-form: {:?}", expr.β_reduce().to_string());
+            println!("η-normal-form: {:?}", expr.η_reduce().to_string());
+            // TODO: combine
         }
     }
 

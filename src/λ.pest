@@ -1,10 +1,12 @@
 // TODO: unicode compliance
-WHITESPACE = _{ " " | NEWLINE }
+WHITESPACE = _{ " " | NEWLINE | "," }
 
 // TODO: unicode support
 variable = { ASCII_ALPHANUMERIC }
 pexpr = { "(" ~ expr ~ ")" }
 item = { variable | pexpr }
+
+// TODO: assignments
 
 expr = { func | item+ }
 
