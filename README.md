@@ -24,7 +24,7 @@ single-letter-form (`λab.a` instead of `λa b.a`) and
 We use `pest` to parse your statements into a high-level AST, then we generate
 proper ASTs from that. Those basically look like that:
 
-![](IMG_0049.PNG)
+<img src="IMG_0049.PNG" width="200" />
 
 `λab.ab` η-reduces to `λa.a`.
 
