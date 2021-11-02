@@ -1,15 +1,22 @@
 // TODO: unicode compliance
-WHITESPACE = _{ " " | NEWLINE | "," }
+// TODO: comments as whitespace
+WHITESPACE = _{ " " | "," }
 
 // TODO: unicode support
-variable = { ASCII_ALPHANUMERIC }
+variable = @{ ASCII_ALPHANUMERIC+ }
 pexpr = { "(" ~ expr ~ ")" }
 item = { variable | pexpr }
 
-// TODO: assignments
+assignment = { variable ~ ("≔" | "≡") ~ expr }
+definition = { variable ~ "←" ~ expr }
 
 expr = { func | item+ }
 
 params = { variable+ }
 body = { expr }
-func = { ("λ" | "Λ") ~ params ~ "." ~ body }
+func = { "λ" ~ params ~ "." ~ body }
+
+statement = _{ assignment | definition | expr }
+
+// TODO: we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
+// TODO: numbers can be their own rule and be expanded directly
