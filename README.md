@@ -24,12 +24,10 @@ single-letter-form (`λab.a` instead of `λa b.a`) and
 We use `pest` to parse your statements into a high-level AST, then we generate
 proper ASTs from that. Those basically look like that:
 
-<img src="IMG_0049.PNG" width="200" />
+<img src="IMG_0049.PNG" width="250" />
 
 `λab.ab` η-reduces to `λa.a`.
 
 Here's how to add 1 and 1 using β-reduction:
 
-![](IMG_0050.PNG)
-![](IMG_0051.PNG)
-![](IMG_0052.PNG)
+![](Β.PNG)
