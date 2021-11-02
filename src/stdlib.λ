@@ -1,0 +1,22 @@
+I ← λa.a
+K ← λa b.a
+KI ← K I
+S ← λf g x.f x (g x)
+C ← λf x y.f y x
+B ← λf g x.f(g x)
+M ← λf.f f
+Ω ← M M
+
+id ← I
+const ← K
+flip ← C
+
+T ← K
+F ← KI
+! ← C
+∧ ← λp q.p q p
+∨ ← M
+
++ ← λm n f x.m f(n f x)
+succ ← + 1
+* ← B
