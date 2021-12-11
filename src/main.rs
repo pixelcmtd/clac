@@ -245,6 +245,7 @@ mod tests {
             include_str!("../test/succ.λ"),
             include_str!("../test/KII.λ"),
             include_str!("../test/1+1.λ"),
+            include_str!("../test/Ix.λ"),
         ] {
             let mut split = case.split(" → ");
             let tree = &ΛCalculus::parse(split.next().unwrap())[0];
