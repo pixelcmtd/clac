@@ -1,22 +1,30 @@
 I ← λa.a
-K ← λa b.a
-KI ← K I
-S ← λf g x.f x (g x)
-C ← λf x y.f y x
-B ← λf g x.f(g x)
-M ← λf.f f
-Ω ← M M
+K ⇐ λab.a
+KI ⇐ KI
+S ⇐ λfgx.fx(gx)
+C ⇐ λfxy.fyx
+B ⇐ λfgx.f(gx)
+M ⇐ λf.ff
+Ω ⇐ MM
 
 id ← I
 const ← K
 flip ← C
 
+T ∈ Bool
 T ← K
+F ∈ Bool
 F ← KI
+! ∈ Bool → Bool
 ! ← C
-∧ ← λp q.p q p
+∧ ∈ Bool → Bool → Bool
+∧ ⇐ λpq.pqp
+∨ ∈ Bool → Bool → Bool
 ∨ ← M
 
-+ ← λm n f x.m f(n f x)
++ ∈ Int → Int → a → b
++ ⇐ λmnfx.mf(nfx)
+# should infer to be Int → a → b
 succ ← + 1
+# TODO: rethink whether to use something like \cdot instead
 * ← B
