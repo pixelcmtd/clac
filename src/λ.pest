@@ -1,9 +1,9 @@
 // TODO: unicode compliance
 // TODO: more creative comments
-WHITESPACE = _{ " " | "," }
+WHITESPACE = _{ " " | "\t" | "," }
+COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 
-// TODO: unicode support
-mvariable = { ASCII_ALPHANUMERIC }
+mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | "↦" | "→" | ";") ~ ANY }
 variable = @{ mvariable+ }
 item = { variable | "(" ~ expr ~ ")" | "$" ~ expr }
 mitem = { mvariable | "(" ~ mexpr ~ ")" | "$" ~ mexpr }
@@ -29,6 +29,7 @@ mfunc = { "λ" ~ mparams ~ ("." | "↦" | "→") ~ mbody }
 
 // TODO: typedef
 statement = _{ vardef | expr }
+statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI }
 
 // TODO: we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
-// TODO: numbers can be their own rule and to be expanded directly during eval/¿reduction
+// TODO: numbers can be their own rule and expanded directly during eval/¿reduction
