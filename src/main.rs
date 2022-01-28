@@ -116,16 +116,14 @@ impl ΛNode {
         }
     }
 
-    //fn wrap_with_defs(&self, defs: Vec<(String, ΛNode)>) -> ΛNode {
-    //    let mut tree = self.clone();
-    //    for pair in defs {
-    //        tree = ΛNode::Application(
-    //            Box::from(ΛNode::Lambda(pair.0, Box::from(tree))),
-    //            Box::from(pair.1),
-    //        );
-    //    }
-    //    tree
-    //}
+    fn contains(self, free_variable: &String) -> bool {
+        match self {
+            ΛNode::Σ(s) => *free_variable == s,
+            ΛNode::Λ(arg, body) => arg != *free_variable && body.contains(free_variable),
+            ΛNode::Α(func, arg) => func.contains(free_variable) || arg.contains(free_variable),
+            ΛNode::Χ(name, body) => name == *free_variable || body.contains(free_variable),
+        }
+    }
 
     fn to_string(&self) -> String {
         match self {
@@ -166,7 +164,7 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
         ΛNode::Λ(param, body) => match &**body {
             ΛNode::Α(func, prm) => {
                 if match &**prm {
-                    ΛNode::Σ(s) => *param == *s,
+                    ΛNode::Σ(s) => *param == *s && !func.clone().contains(&s.clone()),
                     _ => false,
                 } {
                     reduce(&*func, name, arg)
