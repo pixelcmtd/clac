@@ -5,26 +5,31 @@ S ⇐ λfgx.fx(gx)
 C ⇐ λfxy.fyx
 B ⇐ λfgx.f(gx)
 M ⇐ λf.ff
-Ω ⇐ MM
 
 id ← I
 const ← K
 flip ← C
 
-T ∈ Bool
+# T ∈ Bool
 T ← K
-F ∈ Bool
+# F ∈ Bool
 F ← KI
-! ∈ Bool → Bool
+# ! ∈ Bool → Bool
 ! ← C
-∧ ∈ Bool → Bool → Bool
+# ∧ ∈ Bool → Bool → Bool
 ∧ ⇐ λpq.pqp
-∨ ∈ Bool → Bool → Bool
+# ∨ ∈ Bool → Bool → Bool
 ∨ ← M
 
-+ ∈ Int → Int → a → b
+# 0 ∈ Nat
+0 ⇐ λfx.x
+# 1 ∈ Nat
+1 ⇐ λfx.fx
+
+# + ∈ Nat → Nat → (α → α) → α → α
 + ⇐ λmnfx.mf(nfx)
-# should infer to be Int → a → b
+# should infer to be Nat → (α → α) → α → α and β-reduce to λnfx.f(nfx) if 1 is defined
 succ ← + 1
 # TODO: rethink whether to use something like \cdot instead
+# * ∈ Nat → Nat → Nat
 * ← B
