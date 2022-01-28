@@ -69,7 +69,13 @@ impl ΛNode {
 
     fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
         match tree.as_rule() {
-            Rule::WHITESPACE | Rule::params | Rule::mparams | Rule::statement => None,
+            Rule::WHITESPACE
+            | Rule::params
+            | Rule::mparams
+            | Rule::statement
+            | Rule::statements
+            | Rule::COMMENT
+            | Rule::EOI => None,
             Rule::variable | Rule::mvariable => Some(ΛNode::Σ(String::from(tree.as_str()))),
             Rule::item | Rule::mitem | Rule::body | Rule::mbody => {
                 ΛNode::from_parse_tree(tree.into_inner().next()?)
@@ -135,12 +141,12 @@ impl ΛNode {
                 } + &(match **arg {
                     ΛNode::Σ(_) => {
                         String::from(match **func {
-                            ΛNode::Σ(_) => " ",
+                            ΛNode::Σ(_) | ΛNode::Α(_, _) => " ",
                             _ => "",
                         }) + &arg.to_string()
                     }
                     ΛNode::Λ(_, _) | ΛNode::Α(_, _) | ΛNode::Χ(_, _) => {
-                        String::from("(") + &arg.to_string() + ")"
+                        String::from(" (") + &arg.to_string() + ")"
                     }
                 }))
             }
