@@ -43,7 +43,7 @@ solution.
 The most important part.
 
 Take the term `(λa.a)(λb.b)`. It being β-reduced is commonly written as
-`(λa.a)[a := (λb.b)]`, which results in `λb.b`.
+`(a)[a := (λb.b)]`, which results in `λb.b`.
 
 In a general way, the term `(λx.f x)y` is β-reduced to `f y`.
 
@@ -105,14 +105,14 @@ return func
 
 ## Implementation details
 
-<!--TODO: document the AST format-->
+<!--TODO: document the AST format better-->
 
 We use `pest` to parse your statements into a high-level AST, then we generate
 proper ASTs from that. Those basically look like that:
 
 <img src="IMG_0049.PNG" width="250" />
 
-`λab.ab` η-reduces to `λa.a`.
+`λa b.a b` η-reduces to `λa.a`.
 
 Here's how to add 1 and 1 using β-reduction:
 
