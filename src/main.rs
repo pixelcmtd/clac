@@ -175,6 +175,7 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                 }
             }
             _ => {
+                // stop β-reduction if the param is shadowed
                 if *param == *name {
                     node.clone()
                 } else {
@@ -186,6 +187,7 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
             let func = reduce(func, name, arg);
             let param = reduce(param, name, arg);
             match func {
+                // TODO: check if this can cause problems with shadowing
                 ΛNode::Λ(fparam, body) => reduce(&reduce(&*body, &fparam, &param), name, arg),
                 _ => ΛNode::Α(Box::from(func), Box::from(param)),
             }
@@ -207,28 +209,40 @@ impl ΛCalculus {
     }
 
     fn parse(statements: &str) -> Vec<ΛNode> {
-        ΛParser::parse(Rule::statement, statements)
+        ΛParser::parse(Rule::statements, statements)
             .unwrap_or_else(|e| panic!("{}", e))
-            .map(|p| ΛNode::from_parse_tree(p))
-            .filter_map(Some)
+            .map(ΛNode::from_parse_tree)
+            .filter(|x| x.is_some())
             .map(|x| x.unwrap())
             .collect()
     }
 
-    fn eval(&mut self, tree: ΛNode) -> ΛNode {
-        let tree = tree.reduce();
+    fn eval(&mut self, in_tree: ΛNode) -> ΛNode {
+        let tree = in_tree.reduce();
         match tree.clone() {
-            // TODO:
-            ΛNode::Σ(_) | ΛNode::Λ(_, _) | ΛNode::Α(_, _) => {}
+            ΛNode::Α(func, arg) => {
+                ΛNode::Α(Box::from(self.eval(*func)), Box::from(self.eval(*arg))).reduce()
+            }
+            ΛNode::Λ(arg, body) => {
+                // TODO: shadowing
+                ΛNode::Λ(arg, Box::from(self.eval(*body))).reduce()
+            }
             // TODO: think about evaling the exprs
             ΛNode::Χ(name, expr) => {
-                self.vardefs.insert(name, *expr);
+                let expr = self.eval(*expr);
+                self.vardefs.insert(name, expr.clone());
+                expr
             }
-        };
-        tree
+            // TODO: shadowing
+            ΛNode::Σ(s) => match self.vardefs.get(&s) {
+                Some(n) => n.clone(),
+                None => tree,
+            },
+        }
     }
 }
 
+// TODO: more and better tests
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -257,18 +271,19 @@ fn main() -> io::Result<()> {
     let mut buffer = String::new();
     io::stdin().read_to_string(&mut buffer)?;
     let exprs = ΛCalculus::parse(&buffer);
-    let calc = ΛCalculus::new();
+    let mut calc = ΛCalculus::new();
 
-    // TODO: print variable content when just the variable is given
-
-    // TODO: variables
-
-    for raw_expr in exprs {
-        let expr = raw_expr;
-        println!("{:?}", expr);
-        println!("expression: {}", expr.to_string());
-        println!("η-β-normal-form: {}", expr.reduce().to_string());
+    for expr in exprs {
+        println!("expression:     {:?}", expr);
+        println!("as string:      {}", expr.to_string());
+        println!("normal-form:    {}", calc.eval(expr).to_string());
+        println!("");
         // TODO: combine?
+    }
+
+    println!("vardefs:");
+    for pair in calc.vardefs.clone() {
+        println!("  {:?}", pair);
     }
 
     Ok(())
