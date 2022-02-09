@@ -3,12 +3,11 @@
 WHITESPACE = _{ " " | "\t" | "," }
 COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 
-mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | "↦" | "→" | ";") ~ ANY }
+mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | ";" | "∈") ~ ANY }
 variable = @{ mvariable+ }
 item = { variable | "(" ~ expr ~ ")" | "$" ~ expr }
 mitem = { mvariable | "(" ~ mexpr ~ ")" | "$" ~ mexpr }
 
-// TODO: μhs: ≔
 vardef = { variable ~ "←" ~ expr | variable ~ "⇐" ~ mexpr }
 
 expr = { func | item+ }
@@ -18,8 +17,8 @@ params = { variable+ }
 mparams = { mvariable+ }
 body = { expr }
 mbody = { mexpr }
-func = { "λ" ~ params ~ ("." | "↦" | "→") ~ body }
-mfunc = { "λ" ~ mparams ~ ("." | "↦" | "→") ~ mbody }
+func = { "λ" ~ params ~ "." ~ body }
+mfunc = { "λ" ~ mparams ~ "." ~ mbody } //~ ("∈" ~ ty)?
 
 //typedef = { variable ~ "∈" ~ ty }
 //pty = { "(" ~ ty ~ ")" }
@@ -31,5 +30,7 @@ mfunc = { "λ" ~ mparams ~ ("." | "↦" | "→") ~ mbody }
 statement = _{ vardef | expr }
 statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI }
 
-// TODO: we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
-// TODO: numbers can be their own rule and expanded directly during eval/¿reduction
+// TODO:
+// we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
+// also we can support a maths like syntax: I: x ↦ x
+// numbers can be their own rule and expanded directly during eval/¿reduction

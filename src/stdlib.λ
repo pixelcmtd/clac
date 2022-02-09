@@ -14,22 +14,31 @@ flip ← C
 T ← K
 # F ∈ Bool
 F ← KI
-# ! ∈ Bool → Bool
-! ← C
+# ¬ ∈ Bool → Bool
+¬ ← C
 # ∧ ∈ Bool → Bool → Bool
 ∧ ⇐ λpq.pqp
 # ∨ ∈ Bool → Bool → Bool
 ∨ ← M
 
 # 0 ∈ Nat
-0 ⇐ λfx.x
+0 ← KI
 # 1 ∈ Nat
-1 ⇐ λfx.fx
+1 ← I
 
 # + ∈ Nat → Nat → (α → α) → α → α
+# TODO: redefine using succ
 + ⇐ λmnfx.mf(nfx)
 # should infer to be Nat → (α → α) → α → α and β-reduce to λnfx.f(nfx) if 1 is defined
 succ ← + 1
 # TODO: rethink whether to use something like \cdot instead
 # * ∈ Nat → Nat → Nat
 * ← B
+# ^ ∈ Nat → Nat → Nat
+^ ⇐ λmn.nm
+# pred ∈ Nat → Nat
+pred ⇐ λnfx.n(λgh.h(gf))(λu.x)(λu.u)
+# - ∈ Nat → Nat → Nat
+- ← λm n.n pred m
+# ÷ ∈ Nat → Nat → Nat
+÷ ⇐ λn.((λf.M(λx.f(xx)))(λcnmfx.(λd.(λn.n(λx.KI)K)d(0fx)(f(cdmfx)))((λmn.n(λnfx.n(λgh.h(gf))KxI)m)nm)))(+n)
