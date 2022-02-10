@@ -9,15 +9,9 @@ make it more of a usable programming language. As a mathematician/computer
 scientist, you should be familiar with the basic syntax: `λa.a` is the Identity
 function. We also support the shortened syntax, so that `λa b.a` is the Kestrel
 (constant function). It is transparently π-expanded to `λa.λb.a` by the parser.
-Additionally, you can define constants and assign variables: `I ← λa.a`,
-`😈 ≔ (λf.f f)(λf.f f)`. The key difference is that the interpreter tries to
-keep definitions as symbols, while assigned variables are just replaced
-transparently. For example, the expression `I I` will yield `I`, if it was
-_defined_, and `λa.a`, if it was _assigned_ (to that value). Assignments may
-use `≔` or `≡`, `:=` and `=` are up for future consideration. Also, there may
-be 2 more dialects in the future:
-single-letter-form (`λab.a` instead of `λa b.a`) and
-μhs/MicroHaskell (`I a = a` instead of `I ≔ λa.a`, or `I ← λa.a`).
+Additionally, you can assign variables: `I ← λa.a`, `😈 ⇐ (λf.ff)(λf.ff)`. As
+you can see, `😈` is initialized using the expression `(λf.ff)(λf.ff)` instead
+of `(λf.f f)(λf.f f)`, which is because `⇐` activates the single-letter-form.
 
 > But how do you run programs using this notation?
 
@@ -65,9 +59,9 @@ This is quite simple, you might also know it as “point-free programming”.
 
 A function `λx.f x` can be written as `f`. That's it!
 
-A real world example: You want to define a function for adding two. The obvious
-solution would be `add-two ← λ x . + 2 x`. But if you want to feel like a
-**real** badass hacker, you can write it as `add-two ← + 2`.
+A real world example: You want a function for adding two. The obvious solution
+would be `λ x . + 2 x`. But if you want to feel like a **real** badass hacker,
+you can write it as `+ 2`.
 
 Most Haskell linters even force you to write your code this way, and you should.
 
@@ -86,7 +80,11 @@ return Λ("f", Λ("x", num))
 ```
 
 This gives you the correct Church encodings for all unsigned integers:
-0 → `λf x.x`, 1 → `λf x.f x`, 2 → `λf x.f (f x)`, …
+
+- 0 → `λf x.x`
+- 1 → `λf x.f x`
+- 2 → `λf x.f (f x)`
+- …
 
 ## π-expansion
 
