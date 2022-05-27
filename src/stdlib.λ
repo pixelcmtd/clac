@@ -21,6 +21,7 @@ F ← KI
 # ∨ ∈ Bool → Bool → Bool
 ∨ ← M
 
+# Nat ∈ (α → α) → α → α
 # 0 ∈ Nat
 0 ← KI
 # 1 ∈ Nat
@@ -37,8 +38,20 @@ succ ← + 1
 # ^ ∈ Nat → Nat → Nat
 ^ ⇐ λmn.nm
 # pred ∈ Nat → Nat
-pred ⇐ λnfx.n(λgh.h(gf))(λu.x)(λu.u)
+pred ⇐ λnfx.n(λgh.h(gf))(Kx)I
 # - ∈ Nat → Nat → Nat
 - ← λm n.n pred m
 # ÷ ∈ Nat → Nat → Nat
-÷ ⇐ λn.((λf.M(λx.f(xx)))(λcnmfx.(λd.(λn.n(λx.KI)K)d(0fx)(f(cdmfx)))((λmn.n(λnfx.n(λgh.h(gf))KxI)m)nm)))(+n)
+÷ ⇐ λn.((λf.M(λx.f(xx)))(λcnmfx.(λd.(λn.n(λx.KI)K)d(0fx)(f(cdmfx)))(-nm)))(+n)
+
+φ ← λn.n(λf m.m f(f 1)) succ
+
+2 ← succ 1
+3 ← succ 2
+4 ← succ 3
+5 ← succ 4
+6 ← succ 5
+
+φ 0 m
+φ (succ n) 0
+φ n 1
