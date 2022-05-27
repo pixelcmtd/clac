@@ -9,9 +9,10 @@ make it more of a usable programming language. As a mathematician/computer
 scientist, you should be familiar with the basic syntax: `λa.a` is the Identity
 function. We also support the shortened syntax, so that `λa b.a` is the Kestrel
 (constant function). It is transparently π-expanded to `λa.λb.a` by the parser.
-Additionally, you can assign variables: `I ← λa.a`, `😈 ⇐ (λf.ff)(λf.ff)`. As
-you can see, `😈` is initialized using the expression `(λf.ff)(λf.ff)` instead
-of `(λf.f f)(λf.f f)`, which is because `⇐` activates the single-letter-form.
+Additionally, you can assign variables: `I ← λa.a`, `😈 ⇐ (λf.ff)(λf.ff)`. As you
+can see, `😈` is initialized using the expression `(λf.ff)(λf.ff)` instead of
+`(λf.f f)(λf.f f)`, which is because `⇐` activates the single-letter-form (aka.
+math-form).
 
 > But how do you run programs using this notation?
 
@@ -23,10 +24,10 @@ are done using β-reduction, but the other procedures are also important.
 This is probably the most complicated algorithm as there is no obvious approach.
 
 Take the identity function `λa.a`. It can also be expressed as `λb.b`, `λc.c`,
-`λα.α`, `λÄ.Ä`, `λᴍʏᴠᴀʀɪᴀʙʟᴇ.ᴍʏᴠᴀʀɪᴀʙʟᴇ`, `λ🏳️‍⚧️.🏳️‍⚧️`, or any other
-way to replace `a` everywhere in the function. This works as long as our new
-symbol doesn't appear freely in our original function. For example, α-renaming
-a function `λa.λb.a` to `λa.λa.a` is wrong, because `a` is free in `λb.a`.
+`λα.α`, `λÄ.Ä`, `λᴍʏᴠᴀʀɪᴀʙʟᴇ.ᴍʏᴠᴀʀɪᴀʙʟᴇ`, `λ🏳️‍⚧️.🏳️‍⚧️`, or any other way to
+replace `a` everywhere in the function. This works as long as our new symbol
+doesn't appear freely in our original function. For example, α-renaming a
+function `λa.λb.a` to `λa.λa.a` is wrong, because `a` is free in `λb.a`.
 
 This might seem simple, but, as I already said, it isn't. The difficult part is
 determining, where to α-rename to which variable names. That has no standard
@@ -44,7 +45,6 @@ In a general way, the term `(λx.f x)y` is β-reduced to `f y`.
 To give you another example, let's add one and one:
 
 ```λ
-
 + 1 1 = (λm n f x . m f (n f x))(λf x.f x)(λf x.f x)
 → (λn f x . (λf x.f x) f (n f x))(λf x.f x)
 → λf x . (λf x.f x) f ((λf x.f x) f x)
@@ -85,6 +85,8 @@ This gives you the correct Church encodings for all unsigned integers:
 - 1 → `λf x.f x`
 - 2 → `λf x.f (f x)`
 - …
+
+Note: This is not implemented yet.
 
 ## π-expansion
 
