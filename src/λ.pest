@@ -21,7 +21,7 @@ func = { "λ" ~ params ~ "." ~ body }
 mfunc = { "λ" ~ mparams ~ "." ~ mbody } //~ ("∈" ~ ty)?
 
 //typedef = { variable ~ "∈" ~ ty }
-//pty = { "(" ~ ty ~ ")" }
+//pty = { "(" ~ ty ~ ")" | "$" ~ ty }
 //functy = { (pty | variable | unionty) ~ "→" ~ ty }
 //unionty = { (pty | variable) ~ "∪"? ~ (pty | variable | unionty) }
 //ty = _{ variable | pty | functy }
@@ -33,4 +33,4 @@ statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI }
 // TODO:
 // we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
 // also we can support a maths like syntax: I: x ↦ x
-// numbers can be their own rule and expanded directly during eval/¿reduction
+// ι-expansion (numbers can be their own rule and expanded directly)
