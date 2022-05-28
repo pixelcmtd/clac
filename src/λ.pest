@@ -3,7 +3,7 @@
 WHITESPACE = _{ " " | "\t" | "," }
 COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 
-mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | ";" | "∈") ~ ANY }
+mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | ";" | "∈" | "δ" | "→" | "∪" ) ~ ANY }
 variable = @{ mvariable+ }
 item = { variable | "(" ~ expr ~ ")" | "$" ~ expr }
 mitem = { mvariable | "(" ~ mexpr ~ ")" | "$" ~ mexpr }
@@ -28,7 +28,7 @@ mfunc = { "λ" ~ mparams ~ "." ~ mbody } //~ ("∈" ~ ty)?
 
 // TODO: typedef
 statement = _{ vardef | expr }
-statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI }
+statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI | SOI ~ statement ~ EOI }
 
 // TODO:
 // we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
