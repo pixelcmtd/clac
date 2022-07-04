@@ -2,6 +2,7 @@ extern crate pest;
 #[macro_use]
 extern crate pest_derive;
 
+use parse_int::parse;
 use pest::iterators::*;
 use pest::*;
 use rand::seq::SliceRandom;
@@ -89,6 +90,47 @@ impl ΛNode {
         ΛNode::Χ(name, Box::from(body))
     }
 
+    fn ι(mut n: u32) -> ΛNode {
+        let mut num = ΛNode::Σ(String::from("x"), ΤNode::Σ(String::from("α")));
+        while n > 0 {
+            num = ΛNode::α(
+                ΛNode::Σ(
+                    String::from("f"),
+                    ΤNode::Λ(
+                        Box::from(ΤNode::Σ(String::from("α"))),
+                        Box::from(ΤNode::Σ(String::from("α"))),
+                    ),
+                ),
+                num,
+            );
+            n -= 1;
+        }
+        ΛNode::λ(
+            String::from("f"),
+            ΛNode::λ(
+                String::from("x"),
+                num,
+                ΤNode::Λ(
+                    Box::from(ΤNode::Σ(String::from("α"))),
+                    Box::from(ΤNode::Σ(String::from("α"))),
+                ),
+            ),
+            ΤNode::Δ(
+                String::from("α"),
+                Box::from(ΤNode::Λ(
+                    Box::from(ΤNode::Λ(
+                        Box::from(ΤNode::Σ(String::from("α"))),
+                        Box::from(ΤNode::Σ(String::from("α"))),
+                    )),
+                    Box::from(ΤNode::Λ(
+                        Box::from(ΤNode::Σ(String::from("α"))),
+                        Box::from(ΤNode::Σ(String::from("α"))),
+                    )),
+                )),
+            ),
+        )
+    }
+
     fn ty(&self) -> &ΤNode {
         match self {
             ΛNode::Σ(_, t) | ΛNode::Λ(_, _, t) | ΛNode::Τ(_, t) => t,
@@ -107,9 +149,10 @@ impl ΛNode {
             | Rule::statements
             | Rule::COMMENT
             | Rule::EOI => None,
-            Rule::variable | Rule::mvariable => {
-                Some(ΛNode::Σ(String::from(tree.as_str()), ΤNode::Χ))
-            }
+            Rule::variable | Rule::mvariable => Some(match parse::<u32>(tree.as_str()) {
+                Ok(n) => ΛNode::ι(n),
+                Err(_) => ΛNode::Σ(String::from(tree.as_str()), ΤNode::Χ),
+            }),
             Rule::item | Rule::mitem | Rule::body | Rule::mbody => {
                 ΛNode::from_parse_tree(tree.into_inner().next()?)
             }
@@ -374,10 +417,6 @@ fn main() -> io::Result<()> {
         println!("expression:     {:?}", expr);
         println!("as string:      {}", expr.to_string());
         println!("normal-form:    {}", calc.eval(expr).to_string());
-        println!("");
-        println!("");
-        println!("");
-        println!("");
         println!("");
         println!("");
         println!("");

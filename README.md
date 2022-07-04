@@ -74,8 +74,9 @@ When [generating ASTs](#implementation-details), integers are automatically
 
 ```
 num = Σ("x")
-for(; i > 0; i--):
-  num = Α("f", num)
+while i > 0:
+  num = Α(Σ("f"), num)
+  i--
 return Λ("f", Λ("x", num))
 ```
 
