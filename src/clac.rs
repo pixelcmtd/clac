@@ -72,8 +72,9 @@ impl PartialEq for ΛNode {
             ΛNode::Λ(sa, sb, st) => match o.clone() {
                 ΛNode::Λ(oa, ob, ot) => {
                     if sa == oa {
-                        sa == oa && sb == ob
+                        sb == ob
                     } else {
+                        // TODO: check what this does if `oa` is free in `s`
                         s.α_rename(&sa, &oa) == o
                     }
                 }
@@ -94,6 +95,19 @@ impl PartialEq for ΛNode {
         }
     }
 }
+
+//impl PartialEq for ΤNode {
+//    fn eq(&self, other: &Self) -> bool {
+//        let s = self.reduce();
+//        let o = other.reduce();
+//        match s.clone() {
+//            ΤNode::Σ(s) => match o {
+//                ΤNode::Σ(o) => s == o,
+//                _ => false,
+//            },
+//        }
+//    }
+//}
 
 impl ΛNode {
     pub fn π_expand(params: Vec<String>, body: ΛNode) -> ΛNode {
@@ -150,11 +164,10 @@ impl ΛNode {
         )
     }
 
-    pub fn ty(&self) -> &ΤNode {
-        match self {
+    pub fn ty(&self) -> ΤNode {
+        match self.clone() {
             ΛNode::Σ(_, t) | ΛNode::Λ(_, _, t) | ΛNode::Τ(_, t) => t,
-            // TODO:
-            ΛNode::Α(_, _) => &ΤNode::Χ,
+            ΛNode::Α(f, a) => ΤNode::α(f.ty(), a.ty()),
             ΛNode::Χ(_, v) => v.ty(),
         }
     }
@@ -338,11 +351,11 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                         .chars()
                         .collect::<Vec<char>>();
                     let mut name = name.clone();
-                    let mut n = 0;
+                    let mut n = 50;
                     while fparam == name || x.contains(&name) {
                         name = chars
-                            .choose_multiple(&mut rand::thread_rng(), n / 50 + 1)
-                            .fold(String::new(), |s, c| s + &c.to_string());
+                            .choose_multiple(&mut rand::thread_rng(), n / 50)
+                            .collect::<String>();
                         n += 1;
                     }
                     reduce(&x, &name, arg)
