@@ -3,7 +3,6 @@ use pest::iterators::*;
 use pest::*;
 use rand::seq::SliceRandom;
 use std::collections::HashMap;
-use std::io::{self, Read};
 
 #[derive(Parser)]
 #[grammar = "λ.pest"]
@@ -162,6 +161,7 @@ impl ΛNode {
             | Rule::statements
             | Rule::COMMENT
             | Rule::EOI => None,
+            // TODO: relocate ι-expansion to for example reduce time
             Rule::variable | Rule::mvariable => Some(match parse::<u32>(tree.as_str()) {
                 Ok(n) => ΛNode::ι(n),
                 Err(_) => ΛNode::Σ(String::from(tree.as_str()), ΤNode::Χ),

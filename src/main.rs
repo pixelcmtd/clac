@@ -5,6 +5,7 @@ extern crate pest_derive;
 mod clac;
 
 use clac::*;
+use clap::Parser;
 use rustyline::Editor;
 
 // TODO: more and better tests
@@ -35,9 +36,19 @@ mod tests {
     }
 }
 
+#[derive(Parser, Debug)]
+struct Args {
+    // TODO: come up with some more
+    #[clap(short, long)]
+    verbose: bool,
+}
+
 fn main() {
-    // TODO: cli args
-    let debug = true;
+    let args = Args::parse();
+
+    if args.verbose {
+        println!("{:?}", args);
+    }
 
     let mut rl = Editor::<()>::new();
     rl.load_history("~/.λ_history");
@@ -48,19 +59,19 @@ fn main() {
         match rl.readline("λ> ") {
             Ok(line) => {
                 for expr in ΛCalculus::parse(&line) {
-                    if debug {
+                    if args.verbose {
                         println!("expression:     {:?}", expr);
                         println!("as string:      {}", expr.to_string());
                         println!("normal-form:    {}", calc.eval(expr).to_string());
-                        println!("");
-                        println!("");
-                        println!("");
                     // TODO: combine?
                     } else {
                         println!("{}", calc.eval(expr).to_string());
                     }
                 }
             }
+            // TODO: proper handling:
+            // - just exit on ctrl-c/d
+            // - print error and return 1 else
             Err(err) => {
                 println!("{}", err);
                 break;
@@ -70,7 +81,7 @@ fn main() {
 
     rl.save_history("~/.λ_history").unwrap();
 
-    if debug {
+    if args.verbose {
         println!("vardefs:");
         for (name, expr) in calc.vardefs.clone() {
             println!("  {} ← {}", name, expr.to_string());
