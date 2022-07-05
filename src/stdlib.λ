@@ -5,6 +5,7 @@ S ⇐ λfgx.fx(gx)
 C ⇐ λfxy.fyx
 B ⇐ λfgx.f(gx)
 M ⇐ λf.ff
+ω ← M
 
 id ← I
 const ← K
@@ -42,6 +43,10 @@ pred ⇐ λnfx.n(λgh.h(gf))(Kx)I
 
 φ ← λn.n(λf m.m f(f 1)) succ
 
-φ 0 m
-φ (succ n) 0
-φ n 1
+V ⇐ λabf.fab
+pair ← V
+cons ← V
+fst ⇐ λx.xK
+car ← fst
+snd ← λx.x KI
+cdr ← snd
