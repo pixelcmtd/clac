@@ -28,6 +28,22 @@ pub enum ΤNode {
 }
 
 impl ΤNode {
+    pub fn λ(a: ΤNode, b: ΤNode) -> Self {
+        ΤNode::Λ(Box::from(a), Box::from(b))
+    }
+
+    pub fn α(f: ΤNode, a: ΤNode) -> Self {
+        ΤNode::Α(Box::from(f), Box::from(a))
+    }
+
+    pub fn υ(a: ΤNode, b: ΤNode) -> Self {
+        ΤNode::Υ(Box::from(a), Box::from(b))
+    }
+
+    pub fn δ(a: String, b: ΤNode) -> Self {
+        ΤNode::Δ(a, Box::from(b))
+    }
+
     // TODO: this is CLEARLY VERY bad and broken, once types are properly implemented, we can test
     pub fn to_string(&self) -> String {
         match self {
@@ -82,10 +98,13 @@ impl PartialEq for ΛNode {
 impl ΛNode {
     pub fn π_expand(params: Vec<String>, body: ΛNode) -> ΛNode {
         let mut params = params.into_iter().rev();
-        // TODO: typing can be easily introduced here
-        let mut func = ΛNode::λ(params.next().unwrap(), body, ΤNode::Χ);
+        let mut func = ΛNode::λ(
+            params.next().unwrap(),
+            body.clone(),
+            ΤNode::λ(ΤNode::Χ, body.ty().clone()),
+        );
         for param in params {
-            func = ΛNode::λ(String::from(param.as_str()), func, ΤNode::Χ);
+            func = ΛNode::λ(param, func.clone(), ΤNode::λ(ΤNode::Χ, func.ty().clone()));
         }
         func
     }
@@ -108,10 +127,7 @@ impl ΛNode {
             num = ΛNode::α(
                 ΛNode::Σ(
                     String::from("f"),
-                    ΤNode::Λ(
-                        Box::from(ΤNode::Σ(String::from("α"))),
-                        Box::from(ΤNode::Σ(String::from("α"))),
-                    ),
+                    ΤNode::λ(ΤNode::Σ(String::from("α")), ΤNode::Σ(String::from("α"))),
                 ),
                 num,
             );
@@ -122,23 +138,14 @@ impl ΛNode {
             ΛNode::λ(
                 String::from("x"),
                 num,
-                ΤNode::Λ(
-                    Box::from(ΤNode::Σ(String::from("α"))),
-                    Box::from(ΤNode::Σ(String::from("α"))),
-                ),
+                ΤNode::λ(ΤNode::Σ(String::from("α")), ΤNode::Σ(String::from("α"))),
             ),
-            ΤNode::Δ(
+            ΤNode::δ(
                 String::from("α"),
-                Box::from(ΤNode::Λ(
-                    Box::from(ΤNode::Λ(
-                        Box::from(ΤNode::Σ(String::from("α"))),
-                        Box::from(ΤNode::Σ(String::from("α"))),
-                    )),
-                    Box::from(ΤNode::Λ(
-                        Box::from(ΤNode::Σ(String::from("α"))),
-                        Box::from(ΤNode::Σ(String::from("α"))),
-                    )),
-                )),
+                ΤNode::λ(
+                    ΤNode::λ(ΤNode::Σ(String::from("α")), ΤNode::Σ(String::from("α"))),
+                    ΤNode::λ(ΤNode::Σ(String::from("α")), ΤNode::Σ(String::from("α"))),
+                ),
             ),
         )
     }

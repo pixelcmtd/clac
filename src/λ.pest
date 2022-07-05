@@ -33,4 +33,3 @@ statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI | SOI ~ statement ~ 
 // TODO:
 // we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
 // also we can support a maths like syntax: I: x ↦ x
-// ι-expansion (numbers can be their own rule and expanded directly)
