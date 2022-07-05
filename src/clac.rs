@@ -169,10 +169,9 @@ impl ΛNode {
             | Rule::COMMENT
             | Rule::EOI => None,
             // TODO: relocate ι-expansion to for example reduce time
-            Rule::variable | Rule::mvariable => Some(match parse::<u32>(tree.as_str()) {
-                Ok(n) => ΛNode::ι(n),
-                Err(_) => ΛNode::Σ(String::from(tree.as_str()), ΤNode::Χ),
-            }),
+            Rule::variable | Rule::mvariable => {
+                Some(ΛNode::Σ(String::from(tree.as_str()), ΤNode::Χ))
+            }
             Rule::item | Rule::mitem | Rule::body | Rule::mbody => {
                 ΛNode::from_parse_tree(tree.into_inner().next()?)
             }
@@ -279,7 +278,17 @@ impl ΛNode {
 
 fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
     match node {
-        ΛNode::Σ(ref s, _) => if *s == *name { arg } else { node }.clone(),
+        ΛNode::Σ(ref s, _) => {
+            if *s == *name {
+                arg.clone()
+            } else {
+                // TODO: put ι-expansion in the β-reduction
+                match parse::<u32>(s) {
+                    Ok(n) => ΛNode::ι(n),
+                    Err(_) => node.clone(),
+                }
+            }
+        }
         // TODO: rethink whether this is actually a good idea (it probably is)
         ΛNode::Χ(n, e) => ΛNode::χ(
             n.clone(),
