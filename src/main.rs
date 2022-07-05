@@ -6,6 +6,7 @@ use parse_int::parse;
 use pest::iterators::*;
 use pest::*;
 use rand::seq::SliceRandom;
+use rustyline::Editor;
 use std::collections::HashMap;
 use std::io::{self, Read};
 
@@ -421,40 +422,56 @@ mod tests {
                 tree.to_string(),
                 ΛCalculus::parse(&tree.to_string())[0].clone().to_string()
             );
-            assert_eq!(tree.reduce().to_string(), normal_form.to_string());
+            assert_eq!(*tree, normal_form);
         }
     }
 }
 
-fn main() -> io::Result<()> {
+fn main() {
     // TODO: cli args
-    let mut buffer = String::new();
-    io::stdin().read_to_string(&mut buffer)?;
-    let exprs = ΛCalculus::parse(&buffer);
+    let debug = true;
+
+    let mut rl = Editor::<()>::new();
+    rl.load_history("~/.λ_history");
+
     let mut calc = ΛCalculus::new();
 
-    for expr in exprs {
-        println!("expression:     {:?}", expr);
-        println!("as string:      {}", expr.to_string());
-        println!("normal-form:    {}", calc.eval(expr).to_string());
-        println!("");
-        println!("");
-        println!("");
-        println!("");
-        println!("");
-        // TODO: combine?
+    loop {
+        match rl.readline("λ> ") {
+            Ok(line) => {
+                for expr in ΛCalculus::parse(&line) {
+                    if debug {
+                        println!("expression:     {:?}", expr);
+                        println!("as string:      {}", expr.to_string());
+                        println!("normal-form:    {}", calc.eval(expr).to_string());
+                        println!("");
+                        println!("");
+                        println!("");
+                    // TODO: combine?
+                    } else {
+                        println!("{}", calc.eval(expr).to_string());
+                    }
+                }
+            }
+            Err(err) => {
+                println!("{}", err);
+                break;
+            }
+        }
     }
 
-    println!("vardefs:");
-    for (name, expr) in calc.vardefs.clone() {
-        println!("  {} ← {}", name, expr.to_string());
-    }
+    rl.save_history("~/.λ_history").unwrap();
 
-    println!("");
-    println!("typedefs:");
-    for (name, ty) in calc.typedefs.clone() {
-        println!("  {} ∈ {}", name, ty.to_string());
-    }
+    if debug {
+        println!("vardefs:");
+        for (name, expr) in calc.vardefs.clone() {
+            println!("  {} ← {}", name, expr.to_string());
+        }
 
-    Ok(())
+        println!("");
+        println!("typedefs:");
+        for (name, ty) in calc.typedefs.clone() {
+            println!("  {} ∈ {}", name, ty.to_string());
+        }
+    }
 }
