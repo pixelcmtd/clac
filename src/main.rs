@@ -55,6 +55,24 @@ fn main() {
 
     let mut calc = ΛCalculus::new();
 
+    for expr in ΛCalculus::parse(&include_str!("stdlib.λ")) {
+        if args.verbose {
+            println!("");
+            println!("expression:     {:?}", expr);
+            println!("as string:      {}", expr.to_string());
+            println!("normal-form:    {}", calc.eval(expr).to_string());
+        // TODO: combine?
+        } else {
+            calc.eval(expr);
+        }
+    }
+
+    if args.verbose {
+        println!("");
+        println!("––– END STDLIB –––");
+        println!("");
+    }
+
     loop {
         match rl.readline("λ> ") {
             Ok(line) => {
