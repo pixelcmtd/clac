@@ -1,1 +1,1 @@
-λf a.f(f a) → λf a.f(f a)
+2 → λf a.f(f a)

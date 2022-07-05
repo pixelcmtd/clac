@@ -13,7 +13,7 @@ use std::io::{self, Read};
 #[grammar = "λ.pest"]
 struct ΛParser;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 enum ΛNode {
     Σ(String, ΤNode),
     Λ(String, Box<ΛNode>, ΤNode),
@@ -46,31 +46,48 @@ impl ΤNode {
     }
 }
 
-// TODO: partialeq for ΤNode and ΛNode
+// TODO: partialeq for ΤNode
 // TODO: builtin `=`
-//impl PartialEq for ΛNode {
-//    // TODO: α-conversion (or η-reduction, maybe β-reduction)
-//    fn eq(&self, other: &Self) -> bool {
-//        match self {
-//            ΛNode::Symbol(s) => match other {
-//                ΛNode::Symbol(o) => s == o,
-//                _ => false,
-//            },
-//            ΛNode::Lambda(sa, sb) => match other {
-//                ΛNode::Lambda(oa, ob) => sa == oa && sb == ob,
-//                _ => false,
-//            },
-//            ΛNode::Application(sf, sa) => match other {
-//                ΛNode::Application(of, oa) => sf == of && sa == oa,
-//                _ => false,
-//            },
-//        }
-//    }
-//}
+impl PartialEq for ΛNode {
+    fn eq(&self, other: &Self) -> bool {
+        let s = self.reduce();
+        let o = other.reduce();
+        // TODO: type comparison once the type system is "done"
+        match s.clone() {
+            ΛNode::Σ(sv, st) => match o {
+                ΛNode::Σ(ov, ot) => sv == ov,
+                _ => false,
+            },
+            ΛNode::Λ(sa, sb, st) => match o.clone() {
+                ΛNode::Λ(oa, ob, ot) => {
+                    if sa == oa {
+                        sa == oa && sb == ob
+                    } else {
+                        s.α_rename(&sa, &oa) == o
+                    }
+                }
+                _ => false,
+            },
+            ΛNode::Α(sf, sa) => match o {
+                ΛNode::Α(of, oa) => sf == of && sa == oa,
+                _ => false,
+            },
+            ΛNode::Χ(sn, sv) => match o {
+                ΛNode::Χ(on, ov) => sn == on && sv == ov,
+                _ => false,
+            },
+            ΛNode::Τ(sn, sv) => match o {
+                ΛNode::Τ(on, ov) => sn == on && sv == ov,
+                _ => false,
+            },
+        }
+    }
+}
 
 impl ΛNode {
     fn π_expand(params: Vec<String>, body: ΛNode) -> ΛNode {
         let mut params = params.into_iter().rev();
+        // TODO: typing can be easily introduced here
         let mut func = ΛNode::λ(params.next().unwrap(), body, ΤNode::Χ);
         for param in params {
             func = ΛNode::λ(String::from(param.as_str()), func, ΤNode::Χ);
@@ -272,6 +289,7 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
         ΛNode::Τ(_, _) => node.clone(),
         ΛNode::Λ(param, body, _) => match &**body {
             ΛNode::Α(func, prm) => {
+                // η-reduction
                 if match &**prm {
                     ΛNode::Σ(s, _) => *param == *s && !func.contains(&s.clone()),
                     _ => false,
@@ -292,6 +310,8 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                 }
             }
         },
+        // this code is a work of art of "dont do this"
+        // TODO: hang it in an art gallery and fix it
         ΛNode::Α(func, param) => {
             let func = reduce(func, name, arg);
             let param = reduce(param, name, arg);

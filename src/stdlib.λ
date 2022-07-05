@@ -22,10 +22,6 @@ F ← KI
 ∨ ← M
 
 # Nat ∈ (α → α) → α → α
-# 0 ∈ Nat
-0 ← KI
-# 1 ∈ Nat
-1 ← I
 
 # + ∈ Nat → Nat → (α → α) → α → α
 # TODO: redefine using succ
@@ -45,12 +41,6 @@ pred ⇐ λnfx.n(λgh.h(gf))(Kx)I
 ÷ ⇐ λn.((λf.M(λx.f(xx)))(λcnmfx.(λd.(λn.n(λx.KI)K)d(0fx)(f(cdmfx)))(-nm)))(+n)
 
 φ ← λn.n(λf m.m f(f 1)) succ
-
-2 ← succ 1
-3 ← succ 2
-4 ← succ 3
-5 ← succ 4
-6 ← succ 5
 
 φ 0 m
 φ (succ n) 0
