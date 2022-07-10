@@ -167,6 +167,7 @@ impl ΛNode {
     pub fn ty(&self) -> ΤNode {
         match self.clone() {
             ΛNode::Σ(_, t) | ΛNode::Λ(_, _, t) | ΛNode::Τ(_, t) => t,
+            // TODO: no!
             ΛNode::Α(f, a) => ΤNode::α(f.ty(), a.ty()),
             ΛNode::Χ(_, v) => v.ty(),
         }
@@ -181,7 +182,6 @@ impl ΛNode {
             | Rule::statements
             | Rule::COMMENT
             | Rule::EOI => None,
-            // TODO: relocate ι-expansion to for example reduce time
             Rule::variable | Rule::mvariable => {
                 Some(ΛNode::Σ(String::from(tree.as_str()), ΤNode::Χ))
             }

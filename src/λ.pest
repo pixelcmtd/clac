@@ -1,6 +1,8 @@
-// TODO: unicode compliance
-// TODO: more creative comments
-WHITESPACE = _{ " " | "\t" | "," }
+// https://en.wikipedia.org/wiki/Template:Whitespace_(Unicode)
+WHITESPACE = _{ "\t" | " " | "\u{00A0}" | "\u{1680}" | '\u{2000}'..'\u{200A}' | "\u{202F}" | "\u{205F}" | "\u{3000}" | "," }
+// TODO: more creative comments (an idea would be emoji like 💭 but that wouldnt be mathy)
+// NOTE: maybe we don't even need to do comments in here because if the evaluation system
+//       is well enough designed we can just write ANYTHING
 COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 
 mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | ";" | "∈" | "δ" | "→" | "∪" ) ~ ANY }
@@ -32,4 +34,4 @@ statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI | SOI ~ statement ~ 
 
 // TODO:
 // we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
-// also we can support a maths like syntax: I: x ↦ x
+// also we can support a maths like syntax: I: 𝓍 ↦ 𝓍

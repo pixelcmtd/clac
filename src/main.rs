@@ -88,7 +88,8 @@ fn main() {
                 }
             }
             // TODO: proper handling:
-            // - just exit on ctrl-c/d
+            // - just exit on ctrl-d
+            // - dont break on ctrl-c
             // - print error and return 1 else
             Err(err) => {
                 println!("{}", err);
@@ -97,6 +98,7 @@ fn main() {
         }
     }
 
+    // FIXME: it doesnt work
     rl.save_history("~/.λ_history").unwrap();
 
     if args.verbose {
