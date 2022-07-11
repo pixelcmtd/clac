@@ -6,7 +6,7 @@ mod clac;
 
 use clac::*;
 use clap::Parser;
-use rustyline::Editor;
+use rustyline::{error::ReadlineError, Editor, Result};
 
 // TODO: more and better tests
 #[cfg(test)]
@@ -43,8 +43,9 @@ struct Args {
     verbose: bool,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
+    let mut ec = Result::<()>::Ok(());
 
     if args.verbose {
         println!("{:?}", args);
@@ -87,12 +88,10 @@ fn main() {
                     }
                 }
             }
-            // TODO: proper handling:
-            // - just exit on ctrl-d
-            // - dont break on ctrl-c
-            // - print error and return 1 else
+            Err(ReadlineError::Interrupted) => {}
+            Err(ReadlineError::Eof) => break,
             Err(err) => {
-                println!("{}", err);
+                ec = Err(err);
                 break;
             }
         }
@@ -113,4 +112,6 @@ fn main() {
             println!("  {} ∈ {}", name, ty.to_string());
         }
     }
+
+    ec
 }
