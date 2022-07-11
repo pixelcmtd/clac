@@ -6,6 +6,7 @@ mod clac;
 
 use clac::*;
 use clap::Parser;
+use home::home_dir;
 use rustyline::{error::ReadlineError, Editor, Result};
 
 // TODO: more and better tests
@@ -41,18 +42,36 @@ struct Args {
     // TODO: come up with some more
     #[clap(short, long)]
     verbose: bool,
+
+    #[clap(short = 'H', long)]
+    history_file: Option<String>,
+    // TODO: vi mode
 }
 
 fn main() -> Result<()> {
     let args = Args::parse();
     let mut ec = Result::<()>::Ok(());
 
-    if args.verbose {
-        println!("{:?}", args);
-    }
+    let hist = match &args.history_file {
+        Some(h) => h.clone(),
+        None => match home_dir() {
+            Some(p) => p.display().to_string() + "/.λ_history",
+            None => panic!("Can't get home dir"),
+        },
+    };
 
     let mut rl = Editor::<()>::new();
-    rl.load_history("~/.λ_history");
+
+    if args.verbose {
+        println!("{:?}", args);
+
+        match rl.load_history(&hist) {
+            Ok(()) => println!("Using history file: {}", hist),
+            Err(err) => println!("Can't load history: {}", err),
+        }
+    } else {
+        rl.load_history(&hist);
+    }
 
     let mut calc = ΛCalculus::new();
 
@@ -77,6 +96,7 @@ fn main() -> Result<()> {
     loop {
         match rl.readline("λ> ") {
             Ok(line) => {
+                rl.add_history_entry(line.as_str());
                 for expr in ΛCalculus::parse(&line) {
                     if args.verbose {
                         println!("expression:     {:?}", expr);
@@ -97,9 +117,6 @@ fn main() -> Result<()> {
         }
     }
 
-    // FIXME: it doesnt work
-    rl.save_history("~/.λ_history").unwrap();
-
     if args.verbose {
         println!("vardefs:");
         for (name, expr) in calc.vardefs.clone() {
@@ -111,7 +128,11 @@ fn main() -> Result<()> {
         for (name, ty) in calc.typedefs.clone() {
             println!("  {} ∈ {}", name, ty.to_string());
         }
+
+        println!("Saving history file: {}", hist);
     }
+
+    rl.save_history(&hist).unwrap();
 
     ec
 }
