@@ -7,7 +7,7 @@ mod clac;
 use clac::*;
 use clap::Parser;
 use home::home_dir;
-use rustyline::{error::ReadlineError, Editor, Result};
+use rustyline::{config::Builder, error::ReadlineError, EditMode, Editor, Result};
 
 // TODO: more and better tests
 #[cfg(test)]
@@ -45,7 +45,9 @@ struct Args {
 
     #[clap(short = 'H', long)]
     history_file: Option<String>,
-    // TODO: vi mode
+
+    #[clap(long)]
+    vi: bool,
 }
 
 fn main() -> Result<()> {
@@ -60,7 +62,15 @@ fn main() -> Result<()> {
         },
     };
 
-    let mut rl = Editor::<()>::new();
+    let mut rl = Editor::<()>::with_config(
+        Builder::new()
+            .edit_mode(if args.vi {
+                EditMode::Vi
+            } else {
+                EditMode::Emacs
+            })
+            .build(),
+    );
 
     if args.verbose {
         println!("{:?}", args);
