@@ -58,7 +58,6 @@ impl ΤNode {
 }
 
 // TODO: partialeq for ΤNode
-// TODO: builtin `=`
 impl PartialEq for ΛNode {
     fn eq(&self, other: &Self) -> bool {
         let s = self.reduce();
@@ -335,30 +334,20 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                 }
             }
         },
-        // this code is a work of art of "dont do this"
-        // TODO: hang it in an art gallery and fix it
         ΛNode::Α(func, param) => {
             let func = reduce(func, name, arg);
             let param = reduce(param, name, arg);
             match func {
-                // FIXME: this causes problems with shadowing
-                // TODO: use α-renaming
                 ΛNode::Λ(fparam, body, _) => {
-                    // TODO:
-                    // while fparam == *name {}
+                    // β-reduction
+                    // TODO: builtin `=`
                     let x = reduce(&*body, &fparam, &param);
-                    let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                        .chars()
-                        .collect::<Vec<char>>();
-                    let mut name = name.clone();
-                    let mut n = 50;
-                    while fparam == name || x.contains(&name) {
-                        name = chars
-                            .choose_multiple(&mut rand::thread_rng(), n / 50)
-                            .collect::<String>();
-                        n += 1;
+                    // NOTE: this can be μ-optimized
+                    if fparam != *name && !x.contains(&name) {
+                        reduce(&x, &name, arg)
+                    } else {
+                        x
                     }
-                    reduce(&x, &name, arg)
                 }
                 _ => ΛNode::α(func, param),
             }
@@ -409,6 +398,8 @@ impl ΛCalculus {
                 expr
             }
             ΛNode::Τ(_, _) => tree,
+            // NOTE: for optimization you might want to flip the order of the checks around
+            //       as Vec::contains should be faster than HashMap::get
             ΛNode::Σ(s, _) => match self.vardefs.get(&s) {
                 Some(n) => {
                     if vars.contains(&s) {
