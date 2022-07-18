@@ -1,7 +1,7 @@
 use clac::*;
 use clap::Parser;
-use home::home_dir;
 use rustyline::{config::Builder, error::ReadlineError, EditMode, Editor, Result};
+use shellexpand::tilde;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -9,8 +9,9 @@ struct Args {
     #[clap(short, long)]
     verbose: bool,
 
-    #[clap(short = 'H', long)]
-    history_file: Option<String>,
+    #[clap(short = 'H', long, default_value_t = String::from("~/.λ_history"))]
+    // TODO: think a few hours about renaming this to just `history`
+    history_file: String,
 
     #[clap(long)]
     vi: bool,
@@ -21,16 +22,7 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let mut ec = Result::<()>::Ok(());
 
-    let hist = match &args.history_file {
-        Some(h) => h.clone(),
-        None => match home_dir() {
-            Some(p) => p.display().to_string() + "/.λ_history",
-            None => {
-                println!("Can't get home dir, so we won't be able to save your history.");
-                String::from("none")
-            }
-        },
-    };
+    let hist = String::from(tilde(&args.history_file));
 
     let mut rl = Editor::<()>::with_config(
         Builder::new()
