@@ -22,6 +22,7 @@ struct Args {
     vi: bool,
 }
 
+#[allow(unused_must_use)]
 fn main() -> Result<()> {
     let args = Args::parse();
     let mut ec = Result::<()>::Ok(());
@@ -30,7 +31,10 @@ fn main() -> Result<()> {
         Some(h) => h.clone(),
         None => match home_dir() {
             Some(p) => p.display().to_string() + "/.λ_history",
-            None => panic!("Can't get home dir"),
+            None => {
+                println!("Can't get home dir, so we won't be able to save your history.");
+                String::from("none")
+            }
         },
     };
 
@@ -46,13 +50,17 @@ fn main() -> Result<()> {
 
     if args.verbose {
         println!("{:?}", args);
+    }
 
-        match rl.load_history(&hist) {
-            Ok(()) => println!("Using history file: {}", hist),
-            Err(err) => println!("Can't load history: {}", err),
+    if hist != "none" {
+        if args.verbose {
+            match rl.load_history(&hist) {
+                Ok(()) => println!("Using history file: {}", hist),
+                Err(err) => println!("Can't load history: {}", err),
+            }
+        } else {
+            rl.load_history(&hist);
         }
-    } else {
-        rl.load_history(&hist);
     }
 
     let mut calc = ΛCalculus::new();
@@ -60,10 +68,10 @@ fn main() -> Result<()> {
     for expr in ΛCalculus::parse(&include_str!("stdlib.λ")) {
         if args.verbose {
             println!("");
+            // TODO: think about if these are the right things to list
             println!("expression:     {:?}", expr);
             println!("as string:      {}", expr.to_string());
             println!("normal-form:    {}", calc.eval(expr).to_string());
-        // TODO: combine?
         } else {
             calc.eval(expr);
         }
@@ -81,10 +89,10 @@ fn main() -> Result<()> {
                 rl.add_history_entry(line.as_str());
                 for expr in ΛCalculus::parse(&line) {
                     if args.verbose {
+                        // TODO: think about if these are the right things to list (as above)
                         println!("expression:     {:?}", expr);
                         println!("as string:      {}", expr.to_string());
                         println!("normal-form:    {}", calc.eval(expr).to_string());
-                    // TODO: combine?
                     } else {
                         println!("{}", calc.eval(expr).to_string());
                     }
@@ -110,11 +118,15 @@ fn main() -> Result<()> {
         for (name, ty) in calc.typedefs.clone() {
             println!("  {} ∈ {}", name, ty.to_string());
         }
-
-        println!("Saving history file: {}", hist);
     }
 
-    rl.save_history(&hist).unwrap();
+    if hist != "none" {
+        if args.verbose {
+            println!("Saving history file: {}", hist);
+        } else {
+            rl.save_history(&hist).unwrap();
+        }
+    }
 
     ec
 }
