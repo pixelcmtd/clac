@@ -13,6 +13,7 @@ struct ΛParser;
 
 #[derive(Clone, Debug)]
 pub enum ΛNode {
+    // TODO: think about whether we can always infer the Σ type
     Σ(String, ΤNode),
     Λ(String, Box<ΛNode>, ΤNode),
     Α(Box<ΛNode>, Box<ΛNode>),
@@ -20,7 +21,7 @@ pub enum ΛNode {
     Τ(String, ΤNode),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum ΤNode {
     Χ,
     Σ(String),
@@ -58,9 +59,85 @@ impl ΤNode {
             ΤNode::Υ(l, r) => l.to_string() + " ∪ " + &r.to_string(),
         }
     }
+
+    pub fn contains(&self, free_variable: &String) -> bool {
+        match self {
+            ΤNode::Χ => false,
+            ΤNode::Σ(s) => *free_variable == *s,
+            ΤNode::Λ(arg, body) => arg.contains(free_variable) || body.contains(free_variable),
+            ΤNode::Δ(arg, body) => *arg != *free_variable && body.contains(free_variable),
+            ΤNode::Α(func, arg) => func.contains(free_variable) || arg.contains(free_variable),
+            ΤNode::Υ(l, r) => l.contains(free_variable) || r.contains(free_variable),
+        }
+    }
+
+    pub fn α_rename(self, from: &String, to: &String) -> ΤNode {
+        match self.clone() {
+            ΤNode::Χ => ΤNode::Χ,
+            ΤNode::Σ(s) => {
+                if s == *from {
+                    ΤNode::Σ(to.clone())
+                } else {
+                    self
+                }
+            }
+            ΤNode::Λ(a, b) => ΤNode::λ(a.α_rename(from, to), b.α_rename(from, to)),
+            ΤNode::Δ(a, b) => {
+                if a == *from {
+                    ΤNode::δ(to.clone(), b.α_rename(from, to))
+                } else {
+                    b.α_rename(from, to)
+                }
+            }
+            ΤNode::Α(f, a) => ΤNode::α(f.α_rename(from, to), a.α_rename(from, to)),
+            ΤNode::Υ(l, r) => ΤNode::υ(l.α_rename(from, to), r.α_rename(from, to)),
+        }
+    }
+
+    pub fn reduce(&self) -> ΤNode {
+        τreduce(self, &String::new(), &ΤNode::Χ)
+    }
 }
 
-// TODO: partialeq for ΤNode
+fn τreduce(node: &ΤNode, name: &String, arg: &ΤNode) -> ΤNode {
+    // TODO: figure out how η-reduction etc are supposed to work with Τs
+    match node {
+        ΤNode::Σ(ref s) => {
+            if *s == *name {
+                arg.clone()
+            } else {
+                node.clone()
+            }
+        }
+        ΤNode::Χ => ΤNode::Χ,
+        ΤNode::Λ(param, body) => ΤNode::λ(τreduce(param, name, arg), τreduce(body, name, arg)),
+        ΤNode::Δ(param, body) => ΤNode::δ(param.clone(), τreduce(body, name, arg)),
+        ΤNode::Υ(left, right) => ΤNode::υ(τreduce(left, name, arg), τreduce(right, name, arg)),
+        ΤNode::Α(func, param) => {
+            let func = τreduce(func, name, arg);
+            // NOTE: this can be optimized a lot
+            let param = τreduce(param, name, arg);
+            match func {
+                // TODO: think about having some builtin types
+                // β-λ-reduction
+                ΤNode::Λ(_, body) => *body,
+                ΤNode::Χ => ΤNode::Χ,
+                ΤNode::Δ(fparam, body) => {
+                    // β-δ-reduction
+                    let x = τreduce(&*body, &fparam, &param);
+                    // NOTE: this can be μ-optimized
+                    if fparam != *name && !x.contains(&name) {
+                        τreduce(&x, &name, arg)
+                    } else {
+                        x
+                    }
+                }
+                _ => ΤNode::α(func, param),
+            }
+        }
+    }
+}
+
 impl PartialEq for ΛNode {
     fn eq(&self, other: &Self) -> bool {
         let s = self.reduce();
@@ -98,18 +175,47 @@ impl PartialEq for ΛNode {
     }
 }
 
-//impl PartialEq for ΤNode {
-//    fn eq(&self, other: &Self) -> bool {
-//        let s = self.reduce();
-//        let o = other.reduce();
-//        match s.clone() {
-//            ΤNode::Σ(s) => match o {
-//                ΤNode::Σ(o) => s == o,
-//                _ => false,
-//            },
-//        }
-//    }
-//}
+impl PartialEq for ΤNode {
+    fn eq(&self, other: &Self) -> bool {
+        let s = self.reduce();
+        let o = other.reduce();
+        match s.clone() {
+            ΤNode::Χ => true,
+            ΤNode::Σ(s) => match o {
+                ΤNode::Σ(o) => s == o,
+                ΤNode::Χ => true,
+                _ => false,
+            },
+            ΤNode::Δ(sa, sb) => match o.clone() {
+                ΤNode::Δ(oa, ob) => {
+                    if sa == oa {
+                        sb == ob
+                    } else {
+                        // TODO: check what this does if `oa` is free in `s`
+                        s.α_rename(&sa, &oa) == o
+                    }
+                }
+                ΤNode::Χ => true,
+                _ => false,
+            },
+            ΤNode::Α(sf, sa) => match o {
+                ΤNode::Α(of, oa) => sf == of && sa == oa,
+                ΤNode::Χ => true,
+                _ => false,
+            },
+            ΤNode::Λ(sa, sb) => match o {
+                ΤNode::Λ(oa, ob) => sa == oa && sb == ob,
+                ΤNode::Χ => true,
+                _ => false,
+            },
+            ΤNode::Υ(sl, sr) => match o {
+                ΤNode::Υ(ol, or) => sl == ol && sr == or,
+                ΤNode::Χ => true,
+                _ => false,
+            },
+        }
+    }
+}
 
 impl ΛNode {
     pub fn π_expand(params: Vec<String>, body: ΛNode) -> ΛNode {
@@ -166,13 +272,16 @@ impl ΛNode {
         )
     }
 
-    pub fn ty(&self) -> ΤNode {
+    fn ity(&self) -> ΤNode {
         match self.clone() {
             ΛNode::Σ(_, t) | ΛNode::Λ(_, _, t) | ΛNode::Τ(_, t) => t,
-            // TODO: no!
-            ΛNode::Α(f, a) => ΤNode::α(f.ty(), a.ty()),
-            ΛNode::Χ(_, v) => v.ty(),
+            ΛNode::Α(f, a) => ΤNode::α(f.ity(), a.ity()),
+            ΛNode::Χ(_, v) => v.ity(),
         }
+    }
+
+    pub fn ty(&self) -> ΤNode {
+        self.ity().reduce()
     }
 
     fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
@@ -232,7 +341,7 @@ impl ΛNode {
             ΛNode::Λ(arg, body, _) => *arg != *free_variable && body.contains(free_variable),
             ΛNode::Α(func, arg) => func.contains(free_variable) || arg.contains(free_variable),
             ΛNode::Χ(name, body) => *name == *free_variable || body.contains(free_variable),
-            ΛNode::Τ(name, ty) => *name == *free_variable, // TODO: || ty.contains
+            ΛNode::Τ(name, _) => *name == *free_variable,
         }
     }
 
@@ -287,11 +396,11 @@ impl ΛNode {
     }
 
     pub fn reduce(&self) -> ΛNode {
-        reduce(self, &String::new(), &ΛNode::Σ(String::new(), ΤNode::Χ))
+        λreduce(self, &String::new(), &ΛNode::Σ(String::new(), ΤNode::Χ))
     }
 }
 
-fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
+fn λreduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
     match node {
         ΛNode::Σ(ref s, _) => {
             if *s == *name {
@@ -308,7 +417,7 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
         ΛNode::Χ(n, e) => ΛNode::χ(
             n.clone(),
             if n != name {
-                reduce(e, name, arg)
+                λreduce(e, name, arg)
             } else {
                 e.reduce()
             },
@@ -321,11 +430,11 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                     ΛNode::Σ(s, _) => *param == *s && !func.contains(&s.clone()),
                     _ => false,
                 } {
-                    reduce(&*func, name, arg)
+                    λreduce(&*func, name, arg)
                 } else if *param == *name {
                     node.clone()
                 } else {
-                    ΛNode::λ(param.clone(), reduce(body, name, arg), node.ty().clone())
+                    ΛNode::λ(param.clone(), λreduce(body, name, arg), node.ty().clone())
                 }
             }
             _ => {
@@ -333,21 +442,21 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                 if *param == *name {
                     node.clone()
                 } else {
-                    ΛNode::λ(param.clone(), reduce(body, name, arg), node.ty().clone())
+                    ΛNode::λ(param.clone(), λreduce(body, name, arg), node.ty().clone())
                 }
             }
         },
         ΛNode::Α(func, param) => {
-            let func = reduce(func, name, arg);
-            let param = reduce(param, name, arg);
+            let func = λreduce(func, name, arg);
+            let param = λreduce(param, name, arg);
             match func {
                 // TODO: builtin `=`
                 ΛNode::Λ(fparam, body, _) => {
                     // β-reduction
-                    let x = reduce(&*body, &fparam, &param);
+                    let x = λreduce(&*body, &fparam, &param);
                     // NOTE: this can be μ-optimized
                     if fparam != *name && !x.contains(&name) {
-                        reduce(&x, &name, arg)
+                        λreduce(&x, &name, arg)
                     } else {
                         x
                     }

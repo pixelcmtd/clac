@@ -1,6 +1,6 @@
 # λ
 
-## also known as `clac`
+### also known as `clac`
 
 This is an implementation of the λ-calculus in Rust. It has a few niceties to
 make it more of a usable programming language. As a mathematician/computer
