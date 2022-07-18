@@ -1,1 +1,0 @@
-(λn m f x.m (λn f x.n (λg h.h (g f)) (λa.a) (λb.x)) m (λx.λb.λa.a) (λa.λb.a) (f (x x (m (λn f x.n (λg h.h (g f)) (λa.a) (λb.x)) m) x f m)) x)(λf x.f(f x))(λf x.f(f x)) → λf x.f x

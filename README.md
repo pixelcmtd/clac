@@ -1,10 +1,8 @@
 # λ
 
-```
-λλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλλ
-```
+## also known as `clac`
 
-This is an implementation of the λ calculus in Rust. It has a few niceties to
+This is an implementation of the λ-calculus in Rust. It has a few niceties to
 make it more of a usable programming language. As a mathematician/computer
 scientist, you should be familiar with the basic syntax: `λa.a` is the Identity
 function (also known as `I`, „Identitätsfunktion“, “Idiot”). We also support the

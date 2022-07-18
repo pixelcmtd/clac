@@ -1,1 +1,0 @@
-(λ m n f x . m f (n f x)) 1 1 → λf x.f(f x)
