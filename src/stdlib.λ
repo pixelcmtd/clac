@@ -24,10 +24,10 @@ F ← KI
 
 # Nat ∈ (α → α) → α → α
 
-# + ∈ Nat → Nat → (α → α) → α → α
+# + ∈ Nat → Nat → Nat
 # TODO: redefine using succ
 + ⇐ λmnfx.mf(nfx)
-# should infer to be Nat → (α → α) → α → α and β-reduce to λnfx.f(nfx) if 1 is defined
+# should infer to be Δ α . Nat → Nat and β-reduce to λnfx.f(nfx)
 succ ← + 1
 # TODO: rethink whether to use something like \cdot instead
 # * ∈ Nat → Nat → Nat
