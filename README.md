@@ -7,12 +7,13 @@
 This is an implementation of the λ calculus in Rust. It has a few niceties to
 make it more of a usable programming language. As a mathematician/computer
 scientist, you should be familiar with the basic syntax: `λa.a` is the Identity
-function. We also support the shortened syntax, so that `λa b.a` is the Kestrel
-(constant function). It is transparently π-expanded to `λa.λb.a` by the parser.
-Additionally, you can assign variables: `I ← λa.a`, `😈 ⇐ (λf.ff)(λf.ff)`. As you
-can see, `😈` is initialized using the expression `(λf.ff)(λf.ff)` instead of
-`(λf.f f)(λf.f f)`, which is because `⇐` activates the single-letter-form (aka.
-math-form).
+function (also known as `I`, „Identitätsfunktion“, “Idiot”). We also support the
+shortened syntax, so that `λa b.a` is the Kestrel (also known as `K`, `C`,
+„Konstante Funktion“, “Constant Function”). It is transparently π-expanded to
+`λa.λb.a` by the parser. Additionally, you can assign variables: `I ← λa.a`,
+`😈 ⇐ (λf.ff)(λf.ff)`. As you can see, `😈` is initialized using the expression
+`(λf.ff)(λf.ff)` instead of `(λf.f f)(λf.f f)`, which is because `⇐` activates
+the single-letter-form (aka. math-form).
 
 > But how do you run programs using this notation?
 
@@ -69,8 +70,8 @@ Most Haskell linters even force you to write your code this way, and you should.
 
 This one implements unsigned integers aka natural numbers.
 
-When [generating ASTs](#implementation-details), integers are automatically
-ι-expanded like this:
+When [β-reducing](#β-reduction), integers are automatically ι-expanded like
+this:
 
 ```
 num = Σ("x")
@@ -86,8 +87,6 @@ This gives you the correct Church encodings for all unsigned integers:
 - 1 → `λf x.f x`
 - 2 → `λf x.f (f x)`
 - …
-
-Note: This is not implemented yet.
 
 ## π-expansion
 

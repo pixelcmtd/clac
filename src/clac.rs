@@ -1,7 +1,6 @@
 use parse_int::parse;
 use pest::iterators::*;
 use pest::*;
-use rand::seq::SliceRandom;
 use std::collections::HashMap;
 
 #[derive(Parser)]
@@ -338,9 +337,9 @@ fn reduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
             let func = reduce(func, name, arg);
             let param = reduce(param, name, arg);
             match func {
+                // TODO: builtin `=`
                 ΛNode::Λ(fparam, body, _) => {
                     // β-reduction
-                    // TODO: builtin `=`
                     let x = reduce(&*body, &fparam, &param);
                     // NOTE: this can be μ-optimized
                     if fparam != *name && !x.contains(&name) {
