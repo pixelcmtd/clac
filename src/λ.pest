@@ -30,8 +30,7 @@ mfunc = { "λ" ~ mparams ~ "." ~ mbody } //~ ("∈" ~ ty)?
 
 // TODO: typedef
 statement = _{ vardef | expr }
-// FIXME/not-so-fun-facts: `a;b` doesnt work, but `a;b;` does
-statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI | SOI ~ statement ~ EOI }
+statements = _{ SOI ~ (NEWLINE | ";")* ~ (statement ~ (NEWLINE | ";")+)* ~ statement? ~ EOI }
 
 // TODO:
 // we can support a μhs syntax in here too we just need an assignment that is I x ≔ x
