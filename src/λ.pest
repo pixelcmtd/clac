@@ -30,6 +30,7 @@ mfunc = { "λ" ~ mparams ~ "." ~ mbody } //~ ("∈" ~ ty)?
 
 // TODO: typedef
 statement = _{ vardef | expr }
+// FIXME/not-so-fun-facts: `a;b` doesnt work, but `a;b;` does
 statements = _{ SOI ~ (statement ~ (NEWLINE | ";")+)* ~ EOI | SOI ~ statement ~ EOI }
 
 // TODO:

@@ -1,15 +1,20 @@
 use clac::*;
 use clap::Parser;
-use rustyline::{config::Builder, error::ReadlineError, EditMode, Editor, Result};
+use permissions::*;
+use rustyline::{config::Builder, error::ReadlineError, EditMode, Editor};
 use shellexpand::tilde;
+use std::{fs::canonicalize, path::Path, path::PathBuf};
 
 #[derive(Parser, Debug)]
+#[clap(version)]
 struct Args {
     // TODO: come up with some more
+
+    // TODO: think about making this action = clap::ArgAction::Count and int
     #[clap(short, long)]
     verbose: bool,
 
-    #[clap(short = 'H', long, default_value_t = String::from("~/.λ_history"))]
+    #[clap(short = 'H', long, value_parser = validate_file, default_value_t = String::from("~/.λ_history"))]
     // TODO: think a few hours about renaming this to just `history`
     history_file: String,
 
@@ -17,12 +22,37 @@ struct Args {
     vi: bool,
 }
 
-#[allow(unused_must_use)]
-fn main() -> Result<()> {
-    let args = Args::parse();
-    let mut ec = Result::<()>::Ok(());
+// TODO: test this piece of crap
+fn validate_file(s: &str) -> Result<String, String> {
+    if s.ends_with("/") {
+        return Err(String::from("is a directory"));
+    }
+    let e = tilde(s);
+    let mut p = PathBuf::from(&*e);
+    match canonicalize(&p) {
+        Ok(c) => p = c,
+        Err(_) => {}
+    }
+    if !p.is_absolute() {
+        p = Path::new(".").join(p);
+    }
+    if match is_writable(&p) {
+        Ok(b) => b,
+        Err(_) => false,
+    } || match is_creatable(&p) {
+        Ok(b) => b,
+        Err(_) => false,
+    } {
+        Ok(String::from(e))
+    } else {
+        Err(String::from("neither writable nor creatable"))
+    }
+}
 
-    let hist = String::from(tilde(&args.history_file));
+#[allow(unused_must_use)]
+fn main() -> Result<(), ReadlineError> {
+    let args = Args::parse();
+    let mut ec = Result::<(), ReadlineError>::Ok(());
 
     let mut rl = Editor::<()>::with_config(
         Builder::new()
@@ -38,14 +68,14 @@ fn main() -> Result<()> {
         println!("{:?}", args);
     }
 
-    if hist != "none" {
+    if args.history_file != "none" {
         if args.verbose {
-            match rl.load_history(&hist) {
-                Ok(()) => println!("Using history file: {}", hist),
+            match rl.load_history(&args.history_file) {
+                Ok(()) => println!("Using history file: {}", args.history_file),
                 Err(err) => println!("Can't load history: {}", err),
             }
         } else {
-            rl.load_history(&hist);
+            rl.load_history(&args.history_file);
         }
     }
 
@@ -72,7 +102,9 @@ fn main() -> Result<()> {
     loop {
         match rl.readline("λ> ") {
             Ok(line) => {
+                // TODO: think about not putting some things in the history
                 rl.add_history_entry(line.as_str());
+                // TODO: catch parser errors
                 for expr in ΛCalculus::parse(&line) {
                     if args.verbose {
                         // TODO: think about if these are the right things to list (as above)
@@ -106,11 +138,11 @@ fn main() -> Result<()> {
         }
     }
 
-    if hist != "none" {
+    if args.history_file != "none" {
         if args.verbose {
-            println!("Saving history file: {}", hist);
+            println!("Saving history file: {}", args.history_file);
         } else {
-            rl.save_history(&hist).unwrap();
+            rl.save_history(&args.history_file).unwrap();
         }
     }
 
