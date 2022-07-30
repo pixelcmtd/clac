@@ -81,7 +81,10 @@ fn main() -> Result<(), ReadlineError> {
 
     let mut calc = ΛCalculus::new();
 
-    for expr in ΛCalculus::parse(&include_str!("stdlib.λ")) {
+    for expr in match ΛCalculus::parse(&include_str!("stdlib.λ"), args.verbose) {
+        Ok(x) => x,
+        Err(err) => panic!("{}", err),
+    } {
         if args.verbose {
             println!("");
             // TODO: think about if these are the right things to list
@@ -102,18 +105,23 @@ fn main() -> Result<(), ReadlineError> {
     loop {
         match rl.readline("λ> ") {
             Ok(line) => {
-                // TODO: think about not putting some things in the history
+                // TODO: think about not putting some things (maybe errors) in the history
                 rl.add_history_entry(line.as_str());
                 // TODO: catch parser errors
-                for expr in ΛCalculus::parse(&line) {
-                    if args.verbose {
-                        // TODO: think about if these are the right things to list (as above)
-                        println!("expression:     {:?}", expr);
-                        println!("as string:      {}", expr.to_string());
-                        println!("normal-form:    {}", calc.eval(expr).to_string());
-                    } else {
-                        println!("{}", calc.eval(expr).to_string());
+                match ΛCalculus::parse(&line, args.verbose) {
+                    Ok(x) => {
+                        for expr in x {
+                            if args.verbose {
+                                // TODO: think about if these are the right things to list (as above)
+                                println!("expression:     {:?}", expr);
+                                println!("as string:      {}", expr.to_string());
+                                println!("normal-form:    {}", calc.eval(expr).to_string());
+                            } else {
+                                println!("{}", calc.eval(expr).to_string());
+                            }
+                        }
                     }
+                    Err(err) => println!("{}", err),
                 }
             }
             Err(ReadlineError::Interrupted) => {}

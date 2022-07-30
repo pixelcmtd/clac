@@ -55,7 +55,7 @@ impl ΤNode {
             ΤNode::Σ(s) => s.clone(),
             ΤNode::Λ(a, b) => a.to_string() + " → " + &b.to_string(),
             ΤNode::Α(f, a) => f.to_string() + " " + &a.to_string(),
-            ΤNode::Δ(a, b) => String::from("δ") + a + "." + &b.to_string(),
+            ΤNode::Δ(a, b) => String::from("Λ") + a + "." + &b.to_string(),
             ΤNode::Υ(l, r) => l.to_string() + " ∪ " + &r.to_string(),
         }
     }
@@ -123,7 +123,7 @@ fn τreduce(node: &ΤNode, name: &String, arg: &ΤNode) -> ΤNode {
                 ΤNode::Λ(_, body) => *body,
                 ΤNode::Χ => ΤNode::Χ,
                 ΤNode::Δ(fparam, body) => {
-                    // β-δ-reduction
+                    // β-Λ-reduction
                     let x = τreduce(&*body, &fparam, &param);
                     // NOTE: this can be μ-optimized
                     if fparam != *name && !x.contains(&name) {
@@ -284,6 +284,7 @@ impl ΛNode {
         self.ity().reduce()
     }
 
+    // TODO: return Result
     fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
         match tree.as_rule() {
             Rule::WHITESPACE
@@ -480,13 +481,16 @@ impl ΛCalculus {
         }
     }
 
-    pub fn parse(statements: &str) -> Vec<ΛNode> {
-        ΛParser::parse(Rule::statements, statements)
-            .unwrap_or_else(|e| panic!("{}", e))
-            .map(ΛNode::from_parse_tree)
-            .filter(|x| x.is_some())
-            .map(|x| x.unwrap())
-            .collect()
+    pub fn parse(statements: &str, verbose: bool) -> Result<Vec<ΛNode>, pest::error::Error<Rule>> {
+        ΛParser::parse(Rule::statements, statements).map(|a| {
+            if verbose {
+                println!("{}", a);
+            }
+            a.map(ΛNode::from_parse_tree)
+                .filter(|x| x.is_some())
+                .map(|x| x.unwrap())
+                .collect()
+        })
     }
 
     pub fn eval(&mut self, tree: ΛNode) -> ΛNode {
