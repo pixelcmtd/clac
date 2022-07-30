@@ -94,6 +94,77 @@ impl ΤNode {
         }
     }
 
+    // TODO: return Result
+    // TODO: lookup from conventions/idioms for pest and try to follow
+    fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
+        match tree.as_rule() {
+            Rule::WHITESPACE
+            | Rule::params
+            | Rule::mparams
+            | Rule::statement
+            | Rule::statements
+            | Rule::COMMENT
+            | Rule::EOI
+            | Rule::vardef
+            | Rule::typedef
+            | Rule::expr
+            | Rule::mexpr
+            | Rule::func
+            | Rule::mfunc
+            | Rule::body
+            | Rule::mbody
+            | Rule::pty => None,
+            Rule::variable | Rule::mvariable | Rule::argty => {
+                Some(ΤNode::Σ(String::from(tree.as_str())))
+            }
+            Rule::item | Rule::mitem | Rule::bodyty | Rule::paramty | Rule::u1ty | Rule::u2ty => {
+                ΤNode::from_parse_tree(tree.into_inner().next()?)
+            }
+            Rule::ty => {
+                let mut items: Vec<Pair<Rule>> = tree.into_inner().rev().collect();
+                Some(if items.len() == 1 {
+                    ΤNode::from_parse_tree(items.pop()?)?
+                } else {
+                    let mut expr = ΤNode::α(
+                        ΤNode::from_parse_tree(items.pop()?)?,
+                        ΤNode::from_parse_tree(items.pop()?)?,
+                    );
+                    for item in items {
+                        expr = ΤNode::α(expr, ΤNode::from_parse_tree(item)?);
+                    }
+                    expr
+                })
+            }
+            Rule::functy => {
+                let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
+                    Rule::paramty | Rule::bodyty => true,
+                    _ => false,
+                });
+                let params = ΤNode::from_parse_tree(inner.next()?)?;
+                let body = ΤNode::from_parse_tree(inner.next()?)?;
+                Some(ΤNode::λ(params, body))
+            }
+            Rule::unionty => {
+                let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
+                    Rule::u1ty | Rule::u2ty => true,
+                    _ => false,
+                });
+                let lhs = ΤNode::from_parse_tree(inner.next()?)?;
+                let rhs = ΤNode::from_parse_tree(inner.next()?)?;
+                Some(ΤNode::υ(lhs, rhs))
+            }
+            Rule::funty => {
+                let mut inner = tree.into_inner().filter(|x| match x.as_rule() {
+                    Rule::argty | Rule::bodyty => true,
+                    _ => false,
+                });
+                let param = inner.next()?.as_str();
+                let body = ΤNode::from_parse_tree(inner.next()?)?;
+                Some(ΤNode::δ(String::from(param), body))
+            }
+        }
+    }
+
     pub fn reduce(&self) -> ΤNode {
         τreduce(self, &String::new(), &ΤNode::Χ)
     }
@@ -292,6 +363,16 @@ impl ΛNode {
             | Rule::mparams
             | Rule::statement
             | Rule::statements
+            | Rule::ty
+            | Rule::pty
+            | Rule::u1ty
+            | Rule::u2ty
+            | Rule::paramty
+            | Rule::functy
+            | Rule::unionty
+            | Rule::bodyty
+            | Rule::argty
+            | Rule::funty
             | Rule::COMMENT
             | Rule::EOI => None,
             Rule::variable | Rule::mvariable => {
@@ -332,6 +413,12 @@ impl ΛNode {
                 let name = inner.next()?.as_str();
                 let body = ΛNode::from_parse_tree(inner.next()?)?;
                 Some(ΛNode::χ(String::from(name), body))
+            }
+            Rule::typedef => {
+                let mut inner = tree.into_inner();
+                let name = inner.next()?.as_str();
+                let body = ΤNode::from_parse_tree(inner.next()?)?;
+                Some(ΛNode::Τ(String::from(name), body))
             }
         }
     }
@@ -510,10 +597,20 @@ impl ΛCalculus {
             ΛNode::Χ(name, expr) => {
                 let expr = self._eval(*expr, vars);
                 self.vardefs.insert(name.clone(), expr.clone());
-                self.typedefs.insert(name, expr.ty().clone());
+                match self.typedefs.get(&name) {
+                    Some(_) => {}
+                    None => {
+                        // TODO: does ty need to be reduced
+                        self.typedefs.insert(name, expr.ty().clone());
+                    }
+                }
                 expr
             }
-            ΛNode::Τ(_, _) => tree,
+            ΛNode::Τ(name, ty) => {
+                // TODO: does ty need to be reduced
+                self.typedefs.insert(name, ty);
+                tree
+            }
             // NOTE: for optimization you might want to flip the order of the checks around
             //       as Vec::contains should be faster than HashMap::get
             ΛNode::Σ(s, _) => match self.vardefs.get(&s) {

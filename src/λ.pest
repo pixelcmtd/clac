@@ -1,8 +1,11 @@
+// TODO: rename everything to be sensible
+
 // https://en.wikipedia.org/wiki/Template:Whitespace_(Unicode)
 WHITESPACE = _{ "\t" | " " | "\u{00A0}" | "\u{1680}" | '\u{2000}'..'\u{200A}' | "\u{202F}" | "\u{205F}" | "\u{3000}" | "," }
 // TODO: more creative comments (an idea would be emoji like 💭 but that wouldnt be mathy)
 // NOTE: maybe we don't even need to do comments in here because if the evaluation system
-//       is well enough designed we can just write ANYTHING
+//       is well enough designed we can just write ANYTHING (and maybe have a comment
+//       function that throws away all parameters, something like K F)
 COMMENT = { "#" ~ (!NEWLINE ~ ANY)* }
 
 mvariable = @{ !(WHITESPACE | "#" | NEWLINE | "(" | ")" | "$" | "←" | "⇐" | "λ" | "." | ";" | "∈" | "Λ" | "→" | "∪" ) ~ ANY }
@@ -22,14 +25,21 @@ mbody = { mexpr }
 func = { "λ" ~ params ~ "." ~ body }
 mfunc = { "λ" ~ mparams ~ "." ~ mbody } //~ ("∈" ~ ty)?
 
-//typedef = { variable ~ "∈" ~ ty }
-//pty = { "(" ~ ty ~ ")" | "$" ~ ty }
-//functy = { (pty | variable | unionty) ~ "→" ~ ty }
-//unionty = { (pty | variable) ~ "∪"? ~ (pty | variable | unionty) }
-//ty = _{ variable | pty | functy }
+typedef = { variable ~ "∈" ~ ty }
+pty = _{ "(" ~ ty ~ ")" | "$" ~ ty }
+paramty = { pty | unionty | variable }
+bodyty = { ty }
+functy = { paramty ~ "→" ~ bodyty }
+u1ty = { pty | variable }
+u2ty = { pty | unionty | variable }
+unionty = { u1ty ~ "∪"? ~ u2ty }
+// TODO: π-expansion for types
+argty = { variable }
+funty = { "Λ" ~ argty ~ "." ~ bodyty }
+ty = _{ funty | functy | unionty | pty | variable }
 
-// TODO: typedef
-statement = _{ vardef | expr }
+statement = _{ vardef | typedef | expr }
+// TODO: think about using something other than ;
 statements = _{ SOI ~ (NEWLINE | ";")* ~ (statement ~ (NEWLINE | ";")+)* ~ statement? ~ EOI }
 
 // TODO:
