@@ -1,3 +1,4 @@
+I ∈ Λα.α → α
 I ← λa.a
 K ⇐ λab.a
 KI ⇐ KI
@@ -11,34 +12,36 @@ id ← I
 const ← K
 flip ← C
 
-# T ∈ Bool
+Bool ∈ Λα.α → α → α
+
+T ∈ Bool
 T ← K
-# F ∈ Bool
+F ∈ Bool
 F ← KI
-# ¬ ∈ Bool → Bool
+¬ ∈ Bool → Bool
 ¬ ← C
-# ∧ ∈ Bool → Bool → Bool
+∧ ∈ Bool → Bool → Bool
 ∧ ⇐ λpq.pqp
-# ∨ ∈ Bool → Bool → Bool
+∨ ∈ Bool → Bool → Bool
 ∨ ← M
 
-# Nat ∈ (α → α) → α → α
+Nat ∈ Λα.(α → α) → α → α
 
-# + ∈ Nat → Nat → Nat
++ ∈ Nat → Nat → Nat
 # TODO: redefine using succ
 + ⇐ λmnfx.mf(nfx)
-# should infer to be Δ α . Nat → Nat and β-reduce to λnfx.f(nfx)
+# should infer to be Λ α . Nat → Nat and β-reduce to λnfx.f(nfx)
 succ ← + 1
 # TODO: rethink whether to use something like \cdot instead
-# * ∈ Nat → Nat → Nat
+* ∈ Nat → Nat → Nat
 * ← B
-# ^ ∈ Nat → Nat → Nat
+^ ∈ Nat → Nat → Nat
 ^ ⇐ λmn.nm
-# pred ∈ Nat → Nat
+pred ∈ Nat → Nat
 pred ⇐ λnfx.n(λgh.h(gf))(Kx)I
-# - ∈ Nat → Nat → Nat
+- ∈ Nat → Nat → Nat
 - ← λm n.n pred m
-# ÷ ∈ Nat → Nat → Nat
+÷ ∈ Nat → Nat → Nat
 ÷ ⇐ λn.((λf.M(λx.f(xx)))(λcnmfx.(λd.(λn.n(λx.KI)K)d(0fx)(f(cdmfx)))(-nm)))(+n)
 
 φ ← λn.n(λf m.m f(f 1)) succ
