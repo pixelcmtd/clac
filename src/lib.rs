@@ -94,7 +94,6 @@ impl ΤNode {
         }
     }
 
-    // TODO: return Result
     // TODO: lookup from conventions/idioms for pest and try to follow
     fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
         match tree.as_rule() {
@@ -120,6 +119,8 @@ impl ΤNode {
             Rule::item | Rule::mitem | Rule::bodyty | Rule::paramty | Rule::u1ty | Rule::u2ty => {
                 ΤNode::from_parse_tree(tree.into_inner().next()?)
             }
+            // TODO: WTF?!
+            // FIXME: this is probably broken in the same way that Λ::Αs used to be
             Rule::ty => {
                 let mut items: Vec<Pair<Rule>> = tree.into_inner().rev().collect();
                 Some(if items.len() == 1 {
@@ -355,7 +356,6 @@ impl ΛNode {
         self.ity().reduce()
     }
 
-    // TODO: return Result
     fn from_parse_tree(tree: Pair<Rule>) -> Option<Self> {
         match tree.as_rule() {
             Rule::WHITESPACE
@@ -382,18 +382,17 @@ impl ΛNode {
                 ΛNode::from_parse_tree(tree.into_inner().next()?)
             }
             Rule::expr | Rule::mexpr => {
-                let mut items: Vec<Pair<Rule>> = tree.into_inner().rev().collect();
-                Some(if items.len() == 1 {
-                    ΛNode::from_parse_tree(items.pop()?)?
-                } else {
-                    let mut expr = ΛNode::α(
-                        ΛNode::from_parse_tree(items.pop()?)?,
-                        ΛNode::from_parse_tree(items.pop()?)?,
-                    );
-                    for item in items {
+                let mut items = tree.into_inner();
+                let mut expr = ΛNode::from_parse_tree(items.next()?)?;
+                Some(match items.next() {
+                    None => expr,
+                    Some(item) => {
                         expr = ΛNode::α(expr, ΛNode::from_parse_tree(item)?);
+                        for item in items {
+                            expr = ΛNode::α(expr, ΛNode::from_parse_tree(item)?);
+                        }
+                        expr
                     }
-                    expr
                 })
             }
             Rule::func | Rule::mfunc => {

@@ -108,7 +108,7 @@ return func
 We use `pest` to parse your statements into a high-level AST, then we generate
 proper ASTs from that. Those basically look like that:
 
-<img src="IMG_0049.PNG" width="250" />
+<img src="Η.PNG" width="250" />
 
 `λa b.a b` η-reduces to `λa.a`.
 
