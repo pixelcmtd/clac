@@ -20,6 +20,7 @@ struct Args {
 
     #[clap(long)]
     vi: bool,
+    // TODO: --no-stdlib
 }
 
 // TODO: test this piece of crap
@@ -62,7 +63,7 @@ fn main() -> Result<(), ReadlineError> {
                 EditMode::Emacs
             })
             .build(),
-    );
+    )?;
 
     if args.verbose {
         println!("{:?}", args);
@@ -79,33 +80,13 @@ fn main() -> Result<(), ReadlineError> {
         }
     }
 
-    let mut calc = ΛCalculus::new();
-
-    for expr in match ΛCalculus::parse(&include_str!("stdlib.λ"), args.verbose) {
-        Ok(x) => x,
-        Err(err) => panic!("{}", err),
-    } {
-        if args.verbose {
-            println!("");
-            // TODO: think about if these are the right things to list
-            println!("expression:     {:?}", expr);
-            println!("as string:      {}", expr.to_string());
-            println!("normal-form:    {}", calc.eval(expr).to_string());
-        } else {
-            calc.eval(expr);
-        }
-    }
-
-    if args.verbose {
-        println!("");
-        println!("––– END STDLIB –––");
-        println!("");
-    }
+    let mut calc = ΛCalculus::with_stdlib(args.verbose);
 
     loop {
         match rl.readline("λ> ") {
             Ok(line) => {
                 // TODO: think about not putting some things (maybe errors) in the history
+                // FIXME: weirdly doesnt seem to work...︎︎︎︎︎⸘
                 rl.add_history_entry(line.as_str());
                 // TODO: catch parser errors
                 match ΛCalculus::parse(&line, args.verbose) {

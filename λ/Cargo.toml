@@ -1,10 +1,11 @@
 [package]
-name = "clac"
+name = "λ"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+clac = { path = ".." }
 clap = { version = "3", features = ["derive"] }
-parse_int = "0.6"
-pest = "2"
-pest_derive = "2"
+permissions = "0.3"
+rustyline = "10"
+shellexpand = "2"
