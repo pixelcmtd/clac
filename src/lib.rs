@@ -567,6 +567,30 @@ impl ΛCalculus {
         }
     }
 
+    pub fn with_stdlib(verbose: bool) -> Self {
+        let mut λ = ΛCalculus::new();
+        for expr in match ΛCalculus::parse(&include_str!("stdlib.λ"), verbose) {
+            Ok(x) => x,
+            Err(err) => panic!("{}", err),
+        } {
+            if verbose {
+                println!("");
+                // TODO: think about if these are the right things to list
+                println!("expression:     {:?}", expr);
+                println!("as string:      {}", expr.to_string());
+                println!("normal-form:    {}", λ.eval(expr).to_string());
+            } else {
+                λ.eval(expr);
+            }
+        }
+        if verbose {
+            println!("");
+            println!("––– END STDLIB –––");
+            println!("");
+        }
+        λ
+    }
+
     pub fn parse(statements: &str, verbose: bool) -> Result<Vec<ΛNode>, pest::error::Error<Rule>> {
         ΛParser::parse(Rule::statements, statements).map(|a| {
             if verbose {

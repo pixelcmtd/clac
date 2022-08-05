@@ -7,6 +7,8 @@ C ⇐ λfxy.fyx
 B ⇐ λfgx.f(gx)
 M ⇐ λf.ff
 ω ← M
+# TODO: rethink the β-reduction for vars
+# Y ⇐ λf.(λx.f(xx))(λx.f(xx))
 
 id ← I
 const ← K
