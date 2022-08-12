@@ -20,7 +20,9 @@ struct Args {
 
     #[clap(long)]
     vi: bool,
-    // TODO: --no-stdlib
+
+    #[clap(long)]
+    no_stdlib: bool,
 }
 
 // TODO: test this piece of crap
@@ -80,7 +82,11 @@ fn main() -> Result<(), ReadlineError> {
         }
     }
 
-    let mut calc = ΛCalculus::with_stdlib(args.verbose);
+    let mut calc = if args.no_stdlib {
+        ΛCalculus::new()
+    } else {
+        ΛCalculus::with_stdlib(args.verbose)
+    };
 
     loop {
         match rl.readline("λ> ") {

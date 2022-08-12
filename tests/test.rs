@@ -4,6 +4,7 @@ use clac::*;
 #[test]
 fn test_λs() {
     for case in [
+        "a b c d e f g → a b c d e f g",
         "λa.a → λa.a",
         "λn f a.f(n f a) → λn f a.f(n f a)",
         "(λa b.a)(λa.a)(λb.b) → λa.a",
