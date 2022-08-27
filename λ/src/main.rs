@@ -6,8 +6,9 @@ use shellexpand::tilde;
 use std::{fs::canonicalize, fs::read_to_string, path::Path, path::PathBuf};
 
 #[derive(Parser, Debug)]
-#[clap(version)]
+#[clap(version, author, about)]
 struct Args {
+    // TODO: help = "..." for everything
     // TODO: come up with some more
     #[clap(value_parser)]
     files: Vec<String>,
@@ -16,8 +17,9 @@ struct Args {
     #[clap(short, long)]
     verbose: bool,
 
-    #[clap(short = 'H', long, value_parser = validate_file, default_value_t = String::from("~/.λ_history"))]
+    #[clap(short = 'H', long, value_parser = validate_file, default_value_t = String::from("~/.λ_history"), value_name = "FILE")]
     // TODO: think a few hours about renaming this to just `history`
+    // TODO: think about making this an Option
     history_file: String,
 
     #[clap(long)]
@@ -98,7 +100,6 @@ fn main() -> Result<(), ReadlineError> {
         loop {
             match rl.readline("λ> ") {
                 Ok(line) => {
-                    // TODO: think about not putting some things (maybe errors) in the history
                     // FIXME: weirdly doesnt seem to work...︎︎︎︎︎⸘
                     rl.add_history_entry(line.as_str());
                     // TODO: catch parser errors

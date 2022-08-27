@@ -120,7 +120,7 @@ impl ΤNode {
                 ΤNode::from_parse_tree(tree.into_inner().next()?)
             }
             // TODO: WTF?!
-            // FIXME: this is probably broken in the same way that Λ::Αs used to be
+            // FIXME: this is probably broken in the same way that Λ::Αs used to be (9373793e6703)
             Rule::ty => {
                 let mut items: Vec<Pair<Rule>> = tree.into_inner().rev().collect();
                 Some(if items.len() == 1 {
@@ -172,7 +172,6 @@ impl ΤNode {
 }
 
 fn τreduce(node: &ΤNode, name: &String, arg: &ΤNode) -> ΤNode {
-    // TODO: figure out how η-reduction etc are supposed to work with Τs
     match node {
         ΤNode::Σ(ref s) => {
             if *s == *name {
@@ -183,7 +182,28 @@ fn τreduce(node: &ΤNode, name: &String, arg: &ΤNode) -> ΤNode {
         }
         ΤNode::Χ => ΤNode::Χ,
         ΤNode::Λ(param, body) => ΤNode::λ(τreduce(param, name, arg), τreduce(body, name, arg)),
-        ΤNode::Δ(param, body) => ΤNode::δ(param.clone(), τreduce(body, name, arg)),
+        ΤNode::Δ(param, body) => match &**body {
+            ΤNode::Α(func, prm) => {
+                // η-reduction
+                if match &**prm {
+                    ΤNode::Σ(s) => *param == *s,
+                    _ => false,
+                } {
+                    τreduce(func, name, arg)
+                } else if param == name {
+                    node.clone()
+                } else {
+                    ΤNode::δ(param.clone(), τreduce(body, name, arg))
+                }
+            }
+            _ => {
+                if param == name {
+                    node.clone()
+                } else {
+                    ΤNode::δ(param.clone(), τreduce(body, name, arg))
+                }
+            }
+        },
         ΤNode::Υ(left, right) => ΤNode::υ(τreduce(left, name, arg), τreduce(right, name, arg)),
         ΤNode::Α(func, param) => {
             let func = τreduce(func, name, arg);
@@ -197,11 +217,10 @@ fn τreduce(node: &ΤNode, name: &String, arg: &ΤNode) -> ΤNode {
                 ΤNode::Δ(fparam, body) => {
                     // β-Λ-reduction
                     let x = τreduce(&*body, &fparam, &param);
-                    // NOTE: this can be μ-optimized
-                    if fparam != *name && !x.contains(&name) {
-                        τreduce(&x, &name, arg)
-                    } else {
+                    if fparam == *name || x.contains(&name) {
                         x
+                    } else {
+                        τreduce(&x, &name, arg)
                     }
                 }
                 _ => ΤNode::α(func, param),
@@ -210,6 +229,9 @@ fn τreduce(node: &ΤNode, name: &String, arg: &ΤNode) -> ΤNode {
     }
 }
 
+// TODO: what the fuck?!
+// “η-reduction expresses the idea of extensionality, which in this context is that two functions are the same if and only if they give the same result for all arguments. η-reduction converts between λx.f x and f whenever x does not appear free in f.”
+// ~ https://en.wikipedia.org/wiki/Lambda_calculus
 impl PartialEq for ΛNode {
     fn eq(&self, other: &Self) -> bool {
         let s = self.reduce();
@@ -291,6 +313,8 @@ impl PartialEq for ΤNode {
 
 impl ΛNode {
     pub fn π_expand(params: Vec<String>, body: ΛNode) -> ΛNode {
+        // TODO: make the types proper
+        // λa.λb.λc.a b c ∈ Λα.Λβ.Λγ.α → β → γ → α β γ
         let mut params = params.into_iter().rev();
         let mut func = ΛNode::λ(
             params.next().unwrap(),
@@ -500,7 +524,7 @@ fn λreduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                 }
             }
         }
-        // TODO: rethink whether this is actually a good idea (it probably is)
+        // TODO: rethink whether this is actually a good idea (it probably is, but breaks Ω ⇐ MM)
         ΛNode::Χ(n, e) => ΛNode::χ(
             n.clone(),
             if n != name {
@@ -541,11 +565,10 @@ fn λreduce(node: &ΛNode, name: &String, arg: &ΛNode) -> ΛNode {
                 ΛNode::Λ(fparam, body, _) => {
                     // β-reduction
                     let x = λreduce(&*body, &fparam, &param);
-                    // NOTE: this can be μ-optimized
-                    if fparam != *name && !x.contains(&name) {
-                        λreduce(&x, &name, arg)
-                    } else {
+                    if fparam == *name || x.contains(&name) {
                         x
+                    } else {
+                        λreduce(&x, &name, arg)
                     }
                 }
                 _ => ΛNode::α(func, param),
@@ -634,7 +657,7 @@ impl ΛCalculus {
                 self.typedefs.insert(name, ty);
                 tree
             }
-            // NOTE: for optimization you might want to flip the order of the checks around
+            // TODO: think about optimization: might want to flip the order of the checks around
             //       as Vec::contains should be faster than HashMap::get
             ΛNode::Σ(s, _) => match self.vardefs.get(&s) {
                 Some(n) => {

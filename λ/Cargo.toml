@@ -1,6 +1,8 @@
 [package]
 name = "λ"
 version = "0.1.0"
+authors = ["pixel", "chrissx Media"]
+description = "CLI for clac"
 edition = "2021"
 
 [dependencies]

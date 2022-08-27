@@ -36,6 +36,9 @@ unionty = { u1ty ~ "∪"? ~ u2ty }
 // TODO: π-expansion for types
 argty = { variable }
 funty = { "Λ" ~ argty ~ "." ~ bodyty }
+// FIXME: applications:
+// Λx.(a → b) x → Λx.a → b ∪ x
+// Λx.(b) x     → Λx.b ∪ x
 ty = _{ funty | functy | unionty | pty | variable }
 
 statement = _{ vardef | typedef | expr }
