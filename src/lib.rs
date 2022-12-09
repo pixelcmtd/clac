@@ -237,34 +237,20 @@ impl PartialEq for ΛNode {
         let s = self.reduce();
         let o = other.reduce();
         // TODO: type comparison once the type system is "done"
-        match s.clone() {
-            ΛNode::Σ(sv, st) => match o {
-                ΛNode::Σ(ov, ot) => sv == ov,
-                _ => false,
-            },
-            ΛNode::Λ(sa, sb, st) => match o.clone() {
-                ΛNode::Λ(oa, ob, ot) => {
-                    if sa == oa {
-                        sb == ob
-                    } else {
-                        // TODO: check what this does if `oa` is free in `s`
-                        s.α_rename(&sa, &oa) == o
-                    }
+        match (s.clone(), o.clone()) {
+            (ΛNode::Σ(sv, st), ΛNode::Σ(ov, ot)) => sv == ov,
+            (ΛNode::Λ(sa, sb, st), ΛNode::Λ(oa, ob, ot)) => {
+                if sa == oa {
+                    sb == ob
+                } else {
+                    // TODO: check what this does if `oa` is free in `s`
+                    s.α_rename(&sa, &oa) == o
                 }
-                _ => false,
-            },
-            ΛNode::Α(sf, sa) => match o {
-                ΛNode::Α(of, oa) => sf == of && sa == oa,
-                _ => false,
-            },
-            ΛNode::Χ(sn, sv) => match o {
-                ΛNode::Χ(on, ov) => sn == on && sv == ov,
-                _ => false,
-            },
-            ΛNode::Τ(sn, sv) => match o {
-                ΛNode::Τ(on, ov) => sn == on && sv == ov,
-                _ => false,
-            },
+            }
+            (ΛNode::Α(sf, sa), ΛNode::Α(of, oa)) => sf == of && sa == oa,
+            (ΛNode::Χ(sn, sv), ΛNode::Χ(on, ov)) => sn == on && sv == ov,
+            (ΛNode::Τ(sn, sv), ΛNode::Τ(on, ov)) => sn == on && sv == ov,
+            _ => false,
         }
     }
 }
