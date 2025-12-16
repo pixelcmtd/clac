@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 clac = { path = ".." }
-clap = { version = "3", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 permissions = "0.3"
-rustyline = "10"
-shellexpand = "2"
+rustyline = "17"
+shellexpand = "3"

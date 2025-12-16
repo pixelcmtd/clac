@@ -71,7 +71,7 @@ This one implements unsigned integers aka natural numbers.
 When [β-reducing](#β-reduction), integers are automatically ι-expanded like
 this:
 
-```
+```python
 num = Σ("x")
 while i > 0:
   num = Α(Σ("f"), num)
@@ -94,7 +94,7 @@ For example, the function `λa b.a` is expanded into `λa.λb.a`.
 
 It works like this:
 
-```
+```python
 func = body
 for param in params.reverse():
   func = Λ(param, func)

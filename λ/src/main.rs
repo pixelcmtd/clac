@@ -1,7 +1,7 @@
 use clac::*;
 use clap::Parser;
 use permissions::*;
-use rustyline::{config::Builder, error::ReadlineError, EditMode, Editor};
+use rustyline::{config::Builder, error::ReadlineError, DefaultEditor, EditMode};
 use shellexpand::tilde;
 use std::{fs::canonicalize, fs::read_to_string, path::Path, path::PathBuf};
 
@@ -62,7 +62,7 @@ fn main() -> Result<(), ReadlineError> {
     let mut ec = Result::<(), ReadlineError>::Ok(());
 
     // TODO: dont even set up the readline if we're not using a repl
-    let mut rl = Editor::<()>::with_config(
+    let mut rl = DefaultEditor::with_config(
         Builder::new()
             .edit_mode(if args.vi {
                 EditMode::Vi
