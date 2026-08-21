@@ -22,10 +22,13 @@ struct Args {
     // TODO: think about making this an Option
     history_file: String,
 
-    #[clap(long)]
+    #[clap(
+        long,
+        help = "Use Vi-like keybinds for the REPL (the default is Emacs/readline-like)"
+    )]
     vi: bool,
 
-    #[clap(long)]
+    #[clap(long, help = "Don't include the standard library")]
     no_stdlib: bool,
 }
 
