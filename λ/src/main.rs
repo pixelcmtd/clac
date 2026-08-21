@@ -59,6 +59,46 @@ fn validate_file(s: &str) -> Result<String, String> {
     }
 }
 
+fn ast_to_dot(ast: &ΛNode, types: bool, i: usize) -> (String, usize) {
+    match ast {
+        // TODO: types
+        ΛNode::Σ(s, ty) => (
+            if types {
+                format!("n{} [label=\"{} ∈ {}\"]", i, s, ty.to_string())
+            } else {
+                format!("n{} [label=\"{}\"]", i, s)
+            },
+            i + 1,
+        ),
+        ΛNode::Λ(a, b, ty) => {
+            let mut s = if types {
+                format!("n{} [label=\"λ ∈ {}\"]\n", i, ty.to_string())
+            } else {
+                format!("n{} [label=\"λ\"]\n", i)
+            };
+            s += &format!("a{} [label=\"{}\"]\n", i, a);
+            let (t, j) = ast_to_dot(b, types, i + 1);
+            s += &t;
+            s += &format!("\nn{} -> a{}", i, i);
+            s += &format!("\nn{} -> n{}", i, i + 1);
+            (s, j)
+        }
+        ΛNode::Α(f, x) => {
+            let mut s = format!("n{} [shape=point]\n", i);
+            let (t, j) = ast_to_dot(f, types, i + 1);
+            let (u, k) = ast_to_dot(x, types, j);
+            s += &t;
+            s += "\n";
+            s += &u;
+            s += &format!("\nn{} -> n{}", i, i + 1);
+            s += &format!("\nn{} -> n{}", i, j);
+            (s, k)
+        }
+        ΛNode::Χ(_n, _b) => (String::from("// Χ nodes are a TODO"), i),
+        ΛNode::Τ(_n, _t) => (String::from("// TODO: Τ nodes"), i),
+    }
+}
+
 #[allow(unused_must_use)]
 fn main() -> Result<(), ReadlineError> {
     let args = Args::parse();
@@ -111,6 +151,7 @@ fn main() -> Result<(), ReadlineError> {
                             for expr in x {
                                 if args.verbose {
                                     // TODO: think about if these are the right things to list (as above)
+                                    println!("digraph {{\n{}\n}}", ast_to_dot(&expr, true, 0).0);
                                     println!("expression:     {:?}", expr);
                                     println!("as string:      {}", expr.to_string());
                                     println!("normal-form:    {}", calc.eval(expr).to_string());
