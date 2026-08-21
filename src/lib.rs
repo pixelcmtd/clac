@@ -1,3 +1,5 @@
+#![allow(mixed_script_confusables)]
+#![allow(confusable_idents)]
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
